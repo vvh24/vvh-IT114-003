@@ -27,7 +27,24 @@ public class Problem3 {
         //TODO convert each value to positive
         //set the result to the proper index of the output array and maintain the original data type
         //hint: don't forget to handle the data types properly, the result datatype should be the same as the original datatype
-        
+        for (int i = 0; i< arr.length; i++){ //vvh-09/23/24 - for loop goes through each element in the array until it reaches the last 
+        //element and it increases i by 1 each time
+            T element = arr[i]; //vvh-09/23/24 - this line picks out the current element from the array at position i and stores it in a 
+            //variable called element 
+            if (element instanceof Integer){ //vvh-09/23/24 - checks if the element is an int
+                output[i] = Math.abs((Integer) element); //vvh-09/23/24 - if the element is an int, this makes it positive using Math.abs() and stores
+                //it in the output array at the same position 
+            }else if (element instanceof Double){ //vvh-09/23/24 - checks if element is a double
+                output[i] = Math.abs((Double) element); //vvh-09/23/24 - if the element is a double, this makes it positive and stores it in the 
+                //output array at the same index
+            }else if (element instanceof String){ //vvh-09/23/24 - checks if element is a String
+                int num = Integer.parseInt((String) element); //vvh-09/23/24 - this line converts the String into an Integer, so we can work with it as a number
+                output[i] = String.valueOf(Math.abs(num));//vvh-09/23/24 - makes the num positive and converts it back into a string, and stores the output 
+                //at the same index
+            }else { //vvh-09/23/24 - if the element is not an int, double, or string
+                output[i] = element; //vvh-09/23/24 - copy the element to the output array
+            }
+        }
         //end edit section
 
         StringBuilder sb = new StringBuilder();
