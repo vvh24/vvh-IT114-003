@@ -3,6 +3,10 @@ package Module4.Part3HW;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collection;//vvh-10/07/24 - imports the Collection class
+import java.util.List;//vvh-10/07/24 - imports the List interface
+import java.util.ArrayList;//vvh-10/07/24 - imports the ArrayList class
+import java.util.Collections;//vvh-10/07/24 - imports the Collections class to use shuffle
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
@@ -120,10 +124,43 @@ public class Server {
             }
             return true;
         }
+        //vvh-10/07/24 - Example 2: Coin toss command (random heads or tails)
+         if ("/flip".equalsIgnoreCase(message)) {//vvh-10/07/24 -checks if the command is /flip for coin flipping
+        String result = Math.random() < 0.5 ? "heads" : "tails";//vvh-10/07/24 - decides randomly whether to return heads or tails for the coin flip
+        String flipMessage = String.format("User[%s] flipped a coin and got %s", sender.getClientId(), result);//vvh-10/07/24 - formats the coin flip result message to include the user id and result 
+        relay(flipMessage, null);//vvh-10/07/24 - broadcasts the coin flip result to all connected clients
+        return true;//vvh-10/07/24 - exits the /flip command handling once the result is relayed
+    }
+        //vvh-10/07/24 - Example 6: Message shuffler (randomizes the order of the characters of the given message)
+         if (message.startsWith("/shuffle ")) {//vvh-10/07/24 - checks if the command is /shuffle for message shuffling 
+        String toShuffle = message.substring(9).trim(); //vvh-10/07/24 - extracts the message part that follows the /shuffle command 
+        if (toShuffle.isEmpty()) {//vvh-10/07/24 - checks if the message to shuffle is empty 
+            sender.send("please, enter a message along with shuffle.");//vvh-10/07/24 - sends an error message to the client if no message was provided to shuffle 
+            return true;//vvh-10/07/24 - exits the /shuffle command handling if no message was provided 
+        }
+        String shuffledMessage = shuffleMessage(toShuffle);//vvh-10/07/24 - calls the shuffleMessage method to shuffle the provided message 
+        String shuffleResult = String.format("User[%s] shuffled the message: %s", sender.getClientId(), shuffledMessage);//vvh-10/07/24 - formats the shuffled message with the user id 
+        relay(shuffleResult, null); //vvh-10/07/24 - broadcasts the shuffled message to all connected clients 
+        return true;//vvh-10/07/24 - exits the /shuffle command handling once the shuffled message is relayed 
+    }
         // add more "else if" as needed
         return false;
     }
 
+ // Helper method to shuffle a message
+
+private String shuffleMessage(String message) {//vvh-10/07/24 -defines the shuffleMessage method that shuffles the characters of the message
+    List<Character> characters = new ArrayList<>();//vvh-10/07/24 - creates a list to hold the characters of the message
+    for (char c : message.toCharArray()) {//vvh-10/07/24 - loops over the characters in the message and adds them to the list 
+        characters.add(c);//vvh-10/07/24 - adds each character to the list of characters 
+    }
+    Collections.shuffle(characters);//vvh-10/07/24 - shuffles the list of characters 
+    StringBuilder shuffled = new StringBuilder();//vvh-10/07/24 - creates a StringBuilder to build the shuffled message 
+    for (char c : characters) {//vvh-10/07/24 - loops over the shuffled list of characters 
+        shuffled.append(c);//vvh-10/07/24 - appends each character to the StringBuilder to form the shuffled message
+    }
+    return shuffled.toString();//vvh-10/07/24 - returns the shuffled message as a string
+}
     public static void main(String[] args) {
         System.out.println("Server Starting");
         Server server = new Server();
