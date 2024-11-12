@@ -5,6 +5,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+import Project.Common.LoggerUtil; //vvh - 11/11/24 Imports LoggerUtil
+import Project.Common.Payload;//vvh - 11/11/24 Imports Payload
+
 /**
  * Base class the handles the underlying connection between Client and Server-side
  */
@@ -44,6 +47,7 @@ public abstract class BaseServerThread extends Thread {
             return true;
         }
         try {
+            LoggerUtil.INSTANCE.info("Sending Payload: " + payload); //vvh - 11/11/24 Logs the payload being sent to the client for tracking and debugging purposes
             out.writeObject(payload);
             out.flush();
             return true;
@@ -92,23 +96,20 @@ public abstract class BaseServerThread extends Thread {
                     }
                 }
                 catch (ClassCastException | ClassNotFoundException cce) {
-                    System.err.println("Error reading object as specified type: " + cce.getMessage());
-                    cce.printStackTrace();
+                    LoggerUtil.INSTANCE.severe("Error reading object as specified type: ", cce);
                 }
                 catch (IOException e) {
                     if (Thread.currentThread().isInterrupted()) {
                         info("Thread interrupted during read (likely from the disconnect() method)");
                         break;
                     }
-                    info("IO exception while reading from client");
-                    e.printStackTrace();
+                    LoggerUtil.INSTANCE.severe("IO exception while reading from client",e);
                     break;
                 }
             } // close while loop
         } catch (Exception e) {
             // happens when client disconnects
-            info("General Exception");
-            e.printStackTrace();
+            LoggerUtil.INSTANCE.severe("General Exception: ", e);
             info("My Client disconnected");
         } finally {
             isRunning = false;

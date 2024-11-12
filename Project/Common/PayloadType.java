@@ -13,4 +13,9 @@ public enum PayloadType {
     SYNC_READY, // quiet version of READY, used to sync existing ready status of clients in a GameRoom
     RESET_READY, // trigger to tell the client to reset their whole local list's ready status (saves network requests)
     PHASE, // syncs current phase of session (used as a switch to only allow certain logic to execute)
-}
+
+    //vvh-11/10/24 Trivia-specific payload types
+    QUESTION, // vvh-11/10/24 for sending questions and answer options to players
+    SCORE, // vvh-11/10/24 for syncing points of players 
+    ANSWER, //vvh- 11/10/24 for handling player answer choices 
+}   

@@ -13,6 +13,9 @@ import Project.Common.Payload;
 
 import Project.Common.ConnectionPayload;
 import Project.Common.LoggerUtil;
+import Project.Common.AnswerPayload; //vvh - 11/10/24 Import for handling player answers 
+import Project.Common.QAPayload; // vvh - 11/11/24 Import for handling trivia questions
+
 
 /**
  * A server-side representation of a single client.
@@ -126,8 +129,15 @@ public class ServerThread extends BaseServerThread {
                         sendMessage("You must be in a GameRoom to do the ready check");
                     }
                     break;
-                default:
-                    break;
+                case ANSWER: // vvh - 11/10/24 Handle the answer payload
+                    if (payload instanceof AnswerPayload) {
+                        AnswerPayload answerPayload = (AnswerPayload) payload;
+                        String choice = answerPayload.getChoice(); // vvh - 11/11/24 Get the answer choice
+                        ((GameRoom) currentRoom).processAnswer(getClientId(), choice); // vvh -11/11/24 Process the answer
+                } else {
+                    LoggerUtil.INSTANCE.severe("Payload is not of type AnswerPayload.");
+                }
+                break;
             }
         } catch (Exception e) {
             LoggerUtil.INSTANCE.severe("Could not process Payload: " + payload, e);
@@ -182,6 +192,11 @@ public class ServerThread extends BaseServerThread {
         cp.setConnect(true);
         cp.setPayloadType(PayloadType.SYNC_CLIENT);
         return send(cp);
+    }
+    
+    //vvh -11/10/24 method to send a trivia question to the client 
+    public boolean sendQuestion(QAPayload question) {
+        return send(question);
     }
 
     /**

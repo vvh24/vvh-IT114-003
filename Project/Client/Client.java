@@ -15,12 +15,15 @@ import java.util.regex.Pattern;
 import Project.Common.ConnectionPayload;
 import Project.Common.LoggerUtil;
 import Project.Common.Payload;
+import Project.Common.AnswerPayload; //vvh -11/11/24
 import Project.Common.PayloadType;
 import Project.Common.Phase;
 import Project.Common.ReadyPayload;
 import Project.Common.RoomResultsPayload;
 import Project.Common.TextFX;
 import Project.Common.TextFX.Color;
+import Project.Common.QAPayload; //vvh- 11/10/24 Imports QAPayload
+import Project.Common.PointsPayload; //vvh - 11/11/24 Imports QAPayload 
 
 /**
  * Demoing bi-directional communication between client and server in a
@@ -294,6 +297,12 @@ public enum Client {
         send(cp);
     }
 
+    private void sendAnswer(String answer) { //vvh - 11/11/24 Initialize the AnswerPayload with clientId and the answer choice provided by the user
+        AnswerPayload answerPayload = new AnswerPayload(myData.getClientId(), answer); // //vvh - 11/11/24 Initialize with clientId and answer
+        send(answerPayload); // vvh - 11/11/24 Send the AnswerPayLoad to the server using the send method in Client
+        System.out.println("Answer sent: " + answer);
+    }
+    
     /**
      * Generic send that passes any Payload over the socket (to ServerThread)
      * 
@@ -355,6 +364,13 @@ public enum Client {
             System.out.println("Waiting for input"); // moved here to avoid console spam
             while (isRunning) { // Run until isRunning is false
                 String line = si.nextLine();
+
+            // vvh - 11/11/24 Check if the input is an answer choice (A, B, C, or D)
+            if (line.equalsIgnoreCase("A") || line.equalsIgnoreCase("B") || line.equalsIgnoreCase("C") || line.equalsIgnoreCase("D")) {
+                sendAnswer(line);//vvh - 11/11/24 call sendAnswer to send the selected answer to the server 
+                continue;
+            }
+
                 if (!processClientCommand(line)) {
                     if (isConnected()) {
                         sendMessage(line);
@@ -470,6 +486,15 @@ public enum Client {
                 case PayloadType.PHASE:
                     processPhase(payload.getMessage());
                     break;
+                case PayloadType.QUESTION: //vvh - 11/11/24 Handles a received QUESTION payload, displaying the question and options to the client
+                    QAPayload questionPayload = (QAPayload) payload;//vvh - 11/11/24 Casts payload to QAPayload for access to question details
+                    displayQuestion(questionPayload); //vvh - 11/11/24 Display question and options to the client
+                    break;
+                case PayloadType.SCORE://vvh - 11/11/24 Handles received SCORE payloads, displaying the scores to the client
+                    PointsPayload pointsPayload = (PointsPayload) payload;//vvh - 11/11/24  Casts payload to PointsPayload for access to scores
+                    LoggerUtil.INSTANCE.info("Received PointsPayload with scores: " + pointsPayload.getPlayerScores());
+                    // vvh - 11/11/24 Display or process scores for the client
+                    break;
                 default:
                     break;
             }
@@ -477,7 +502,15 @@ public enum Client {
             LoggerUtil.INSTANCE.severe("Could not process Payload: " + payload, e);
         }
     }
-
+    // vvh - 11/11/24 Process and display the message on the client
+    private void processMessage(long clientId, String message) {
+        if (message.startsWith("Time remaining")) {
+            System.out.print("\r" + message + "        "); //vvh-11/11/24 Clear previous characters with extra spaces
+        } else {
+            String name = knownClients.containsKey(clientId) ? knownClients.get(clientId).getClientName() : "Room";
+            System.out.println(TextFX.colorize(String.format("%s: %s", name, message), Color.BLUE));
+        }
+    }
     // payload processors
     private void processPhase(String phase){
         currentPhase = Enum.valueOf(Phase.class, phase);
@@ -532,11 +565,6 @@ public enum Client {
         }
     }
 
-    private void processMessage(long clientId, String message) {
-        String name = knownClients.containsKey(clientId) ? knownClients.get(clientId).getClientName() : "Room";
-        System.out.println(TextFX.colorize(String.format("%s: %s", name, message), Color.BLUE));
-    }
-
     private void processClientSync(long clientId, String clientName) {
         if (!knownClients.containsKey(clientId)) {
             ClientPlayer cd = new ClientPlayer();
@@ -567,6 +595,17 @@ public enum Client {
                 knownClients.clear();
             }
         }
+    }
+
+    private void displayQuestion(QAPayload questionPayload) { //vvh - 11/11/24 Displays question details in the console for the user
+        System.out.println(TextFX.colorize("Category: " + questionPayload.getCategory(), Color.GREEN));
+        System.out.println(TextFX.colorize("Question: " + questionPayload.getQuestionText(), Color.CYAN));  
+        List<String> options = questionPayload.getAnswerOptions();
+        System.out.println("A. " + options.get(0)); //vvh - 11/11/24 Display option A
+        System.out.println("B. " + options.get(1));
+        System.out.println("C. " + options.get(2));
+        System.out.println("D. " + options.get(3));
+        System.out.println("Please type A, B, C, or D to answer.");//vvh - 11/11/24 Prompt for answer
     }
     // end payload processors
 
