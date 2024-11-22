@@ -225,7 +225,7 @@ public class ServerThread extends BaseServerThread {
     }
 
     /**
-     * Tells the client information about a client joining/leaving a room
+     * Tells the client information about a client joining/leaving a room.
      * 
      * @param clientId   their unique identifier
      * @param clientName their name
