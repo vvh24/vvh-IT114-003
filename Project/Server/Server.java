@@ -24,8 +24,13 @@ public enum Server {
     private int port = 3000;
     // Use ConcurrentHashMap for thread-safe room management
     private final ConcurrentHashMap<String, Room> rooms = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<String, Long> roomsByOwner = new ConcurrentHashMap<>();
     private boolean isRunning = true;
     private long nextClientId = 1;
+
+    public long getRoomOwnerFromName(String roomName) {
+        return roomsByOwner.get(roomName.toLowerCase());
+    }
 
     private Server() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -102,6 +107,10 @@ public enum Server {
      * @return true if it was created and false if it wasn't
      */
     protected boolean createRoom(String name) {
+        // added a check to prevent empty room names (11/10/2024)
+        if (name == null || name.length() == 0) {
+            return false;
+        }
         final String nameCheck = name.toLowerCase();
         if (rooms.containsKey(nameCheck)) {
             return false;
@@ -167,4 +176,6 @@ public enum Server {
         server.start(port);
         LoggerUtil.INSTANCE.info("Server Stopped");
     }
+
+
 }

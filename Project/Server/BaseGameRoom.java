@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import Project.Common.LoggerUtil;
 import Project.Common.Phase;
 import Project.Common.TimedEvent;
+import Project.Common.TimerType;
 
 /**
  * No edits should be needed in this file, this prepares the core logic for the
@@ -61,16 +62,22 @@ public abstract class BaseGameRoom extends Room {
     protected abstract void onSessionEnd();
 
     /**
-     * Triggered when a client is successfully added to the base-Room map and the GameRoom map
+     * Triggered when a client is successfully added to the base-Room map and the
+     * GameRoom map
+     * 
      * @param client the client who joined
      */
     protected abstract void onClientAdded(ServerPlayer client);
 
     /**
-     * Triggered when a client is removed from the base-Room map and the GameRoom map
-     * @param client the client who was removed (can be null if removal already occurred)
+     * Triggered when a client is removed from the base-Room map and the GameRoom
+     * map
+     * 
+     * @param client the client who was removed (can be null if removal already
+     *               occurred)
      */
     protected abstract void onClientRemoved(ServerPlayer client);
+
 
     @Override
     protected synchronized void addClient(ServerThread client) {
@@ -89,6 +96,7 @@ public abstract class BaseGameRoom extends Room {
         playersInRoom.put(client.getClientId(), sp);
         onClientAdded(sp);
     }
+
 
     @Override
     protected synchronized void removedClient(ServerThread client) {
@@ -118,23 +126,29 @@ public abstract class BaseGameRoom extends Room {
         if (readyTimer != null) {
             readyTimer.cancel();
             readyTimer = null;
+            sendCurrentTime(TimerType.READY, -1);
+
         }
     }
 
     /**
      * Starts the ready timer
+     * 
      * @param resetOnTry when true, will cancel any active readyTimer
      */
     protected void startReadyTimer(boolean resetOnTry) {
         if (resetOnTry) {
             resetReadyTimer();
         }
-        if(readyTimer == null){
+        if (readyTimer == null) {
             readyTimer = new TimedEvent(30, () -> {
                 // callback to trigger when ready expires
                 checkReadyStatus();
             });
-            readyTimer.setTickCallback((time)->System.out.println("Ready Timer: " + time));
+            readyTimer.setTickCallback((time) -> {
+                System.out.println("Ready Timer: " + time);
+                sendCurrentTime(TimerType.READY, time);
+            });
         }
     }
 
@@ -152,7 +166,11 @@ public abstract class BaseGameRoom extends Room {
     }
 
     protected void resetReadyStatus() {
-        playersInRoom.values().forEach(p -> p.setReady(false));
+        playersInRoom.values().forEach(p -> {
+            p.setAway(false);
+            p.setSpectating(false);
+            p.setReady(false);
+        });
         sendResetReadyTrigger();
     }
 
@@ -169,19 +187,35 @@ public abstract class BaseGameRoom extends Room {
     }
 
     // send/sync data to ServerPlayer(s)
+    /**
+     * Note: due to log output, this will get really spammy
+     * 
+     * @param timerType
+     * @param time      the remaining time or -1 to cancel
+     */
+    protected void sendCurrentTime(TimerType timerType, int time) {
+        playersInRoom.values().removeIf(spInRoom -> {
+            boolean failedToSend = !spInRoom.sendCurrentTime(timerType, time);
+            if (failedToSend) {
+                removedClient(spInRoom.getServerThread());
+            }
+            return failedToSend;
+        });
+    }
 
     /**
      * Syncs the current phase to a single client
+     * 
      * @param sp
      */
-    protected void syncCurrentPhase(ServerPlayer sp){
+    protected void syncCurrentPhase(ServerPlayer sp) {
         sp.sendCurrentPhase(currentPhase);
     }
 
     /**
      * Sends the current phase to all clients
      */
-    protected void sendCurrentPhase(){
+    protected void sendCurrentPhase() {
         playersInRoom.values().removeIf(spInRoom -> {
             boolean failedToSend = !spInRoom.sendCurrentPhase(currentPhase);
             if (failedToSend) {
@@ -238,6 +272,32 @@ public abstract class BaseGameRoom extends Room {
 
     // receive data from ServerThread (GameRoom specific)
     protected void handleReady(ServerThread sender) {
+        try {
+            // early exit checks
+            checkPlayerInRoom(sender);
+            checkCurrentPhase(sender, Phase.READY);
+
+            ServerPlayer sp = null;
+            // option 1: simply just mark ready
+            if (!allowToggleReady) {
+                sp = playersInRoom.get(sender.getClientId());
+                sp.setReady(true);
+            }
+            // option 2: toggle
+            else {
+                sp = playersInRoom.get(sender.getClientId());
+                sp.setReady(!sp.isReady());
+            }
+            startReadyTimer(false); // <-- triggers the next step when it expires
+
+            sendReadyStatus(sp, sp.isReady());
+        } catch (Exception e) {
+            LoggerUtil.INSTANCE.severe("handleReady exception", e);
+        }
+
+    }
+
+    protected void handleReadySpec(ServerThread sender) {
         try {
             // early exit checks
             checkPlayerInRoom(sender);

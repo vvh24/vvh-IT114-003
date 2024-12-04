@@ -1,10 +1,13 @@
 package Project.Server;
 
-import Project.Common.LoggerUtil;
-import Project.Common.Phase;
-import Project.Common.PointsPayload; // vvh - 11/10/24 Import PointsPayload for sending player scores
-import Project.Common.QAPayload; // vvh - 11/10/24 Import for handling trivia questions as payloads.
-import Project.Common.TimedEvent;
+import java.nio.file.Files;//added
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.ConcurrentHashMap;//added
+import java.util.stream.Stream;
+
+import Project.Common.*;
+
 import java.io.BufferedReader; // vvh - 11/10/24 Import for reading question data from a file.
 import java.io.FileReader;
 import java.io.IOException;
@@ -27,27 +30,47 @@ public class GameRoom extends BaseGameRoom {
 
     // used for granular turn handling (usually turn-order turns)
     private TimedEvent turnTimer = null;
+    private int round = 0;
     
     private List<QAPayload> questions; // vvh - 11/10/24 List to store questions loaded from the file.
     private QAPayload currentQuestion; // vvh - 11/10/24 Current question for the round
     private Map<Long, Boolean> playerAnswers = new HashMap<>(); // vvh - 11/10/24 Track answers (clientId, isCorrect)
+    private String category = "All";
+    private ConcurrentHashMap<ServerPlayer, Long> answerTimeMillis = new ConcurrentHashMap<>();
+
 
     public GameRoom(String name) {
         super(name);
+    }
+
+    private List<String> getQuestionCategories() {
+        if(questions == null) {
+            loadQuestionsFromFile("Resources/questions.txt");
+        }
+        return questions.stream().map(QAPayload::getCategory).distinct().collect(Collectors.toList());
     }
 
     /** {@inheritDoc} */
     @Override
     protected void onClientAdded(ServerPlayer sp){
         // sync GameRoom state to new client
-        syncCurrentPhase(sp);
-        syncReadyStatus(sp);
 
-        // vvh - 11/10/24 Sync current question and scores if game is in session
-        if (currentPhase == Phase.IN_PROGRESS && currentQuestion != null) {
-            syncCurrentQuestion(sp); //vvh - 11/11/24 Imports Collectors to aggregate player scores into a formatted scoreboard for display
-            syncPlayerScores(sp); //vvh - 11/11/24 Synchronize current scores with the newly joined client
-        }
+        // give a slight delay to allow the Room list content to be sent from the base
+        // class
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                syncCurrentPhase(sp);
+                syncReadyStatus(sp);
+            }
+        }.start();
+
     }
 
     /** {@inheritDoc} */
@@ -72,19 +95,27 @@ public class GameRoom extends BaseGameRoom {
             return;
         }
 
+        answerTimeMillis.put(player, System.currentTimeMillis());
+
     //vvh - 11/11/24 Determine if the answer is correct
         boolean isCorrect = answer.equalsIgnoreCase(currentQuestion.getCorrectAnswer());
         playerAnswers.put(clientId, isCorrect);
-    // vvh -11/11/24 Notify all players that this player has locked in their answer
-        String lockInMessage = player.getClientName() + " has locked in their answer.";
-        playersInRoom.values().forEach(sp -> sp.sendMessage(lockInMessage)); // Broadcast to all players
-    // vvh - 11/11/24 Log and update score if correct
-        if (isCorrect) {
-            LoggerUtil.INSTANCE.info("Player " + clientId + " answered correctly.");
-            player.incrementScore(10); // vvh - 11/11/24 Awards 10 points to the player for a correct answer
-        } else {
-            LoggerUtil.INSTANCE.info("Player " + clientId + " answered incorrectly.");
+
+        if(!answer.equalsIgnoreCase("AWAY")) {
+            // vvh -11/11/24 Notify all players that this player has locked in their answer
+            String lockInMessage = player.getClientName() + " has locked in their answer ";
+            // vvh - 11/11/24 Log and update score if correct
+            if (isCorrect) {
+                LoggerUtil.INSTANCE.info("Player " + clientId + " answered correctly.");
+                lockInMessage += "correctly.";
+            } else {
+                LoggerUtil.INSTANCE.info("Player " + clientId + " answered incorrectly.");
+                lockInMessage += "incorrectly.";
+            }
+            String finalLockInMessage = lockInMessage;
+            playersInRoom.values().forEach(sp -> sp.sendGameEvent(finalLockInMessage)); // Broadcast to all players
         }
+
 
     // vvh - 11/11/24 Check if all players have answered
         if (playerAnswers.size() == playersInRoom.size()) {
@@ -138,18 +169,32 @@ public class GameRoom extends BaseGameRoom {
             LoggerUtil.INSTANCE.severe("Error reading questions file: " + e.getMessage()); //vvh - 11/10/24 Log error message.
         }
     }
-
     // vvh - 11/10/24 Method to start the first round by selecting and sending a question.
     private void startRound() {
-        if (questions == null || questions.isEmpty()) { //vvh - 11/10/24 Check if questions are loaded.
-            LoggerUtil.INSTANCE.warning("No questions available to start the round."); //vvh - 11/10/24 Log warning if no questions loaded.
-            onSessionEnd(); //vvh - 11/11/24  End the session if no questions are available
-            return;
+        if(category == null || category == "") {
+            category = "All";
+        }
+
+        if (category.equalsIgnoreCase("All")) {
+            if (questions == null || questions.isEmpty()) { //vvh - 11/10/24 Check if questions are loaded.
+                LoggerUtil.INSTANCE.warning("No questions available to start the round."); //vvh - 11/10/24 Log warning if no questions loaded.
+                onSessionEnd(); //vvh - 11/11/24  End the session if no questions are available
+                return;
+            }
+        } else {
+            List<QAPayload> categoryQuestions = questions.stream().filter(q -> q.getCategory().equalsIgnoreCase(category)).collect(Collectors.toList());
+            if (categoryQuestions.isEmpty()) {
+                LoggerUtil.INSTANCE.warning("No questions available for the selected category to start the round."); //vvh - 11/10/24 Log warning if no questions are available for the selected category.
+                onSessionEnd(); //vvh - 11/11/24  End the session if no questions are available for the selected category
+                return;
+            }
         }
         
         Random random = new Random(); //vvh - 11/10/24 Random object for selecting a question.
-        int questionIndex = random.nextInt(questions.size()); // vvh - 11/10/24 Get a random index from the questions list.
-        currentQuestion = questions.remove(questionIndex); //vvh - 11/11/24  Set and remove the chosen question
+        List<QAPayload> categoryQuestions = category.isEmpty() || category.equalsIgnoreCase("All") ? questions : questions.stream().filter(q -> q.getCategory().equalsIgnoreCase(category)).collect(Collectors.toList());
+        int questionIndex = random.nextInt(categoryQuestions.size()); // vvh - 11/10/24 Get a random index from the questions list.
+        currentQuestion = categoryQuestions.remove(questionIndex); //vvh - 11/11/24  Set and remove the chosen question
+        questions.remove(currentQuestion); //vvh - 11/11/24 Remove the chosen question from the list
         playerAnswers.clear(); // vvh - 11/11/24 Clear previous round answers
         sendQuestionToClients(currentQuestion);
 
@@ -169,12 +214,12 @@ public class GameRoom extends BaseGameRoom {
             question.getQuestionText(),
             question.getCategory(),
             question.getAnswerOptions(),
-            null // vvh - 11/10/24 Send null as the correct answer to avoid revealing it to clients
+            question.getCorrectAnswer() // vvh - 11/10/24 Send null as the correct answer to avoid revealing it to clients
         );
 
         //vvh - 11/10/24 Broadcast questionForClients to each connected client (implement actual client broadcast logic here)
         playersInRoom.values().forEach(sp -> sp.sendQuestion(questionForClients)); // vvh - 11/11/24 Broadcast question to each client
-        LoggerUtil.INSTANCE.info("Question sent to clients: " + questionForClients); // vvh - 11/11/24 Log the broadcasted question without the answer.
+        LoggerUtil.INSTANCE.info("Question sent to clients: " + questionForClients + " - "+question.getCorrectAnswer()); // vvh - 11/11/24 Log the broadcasted question without the answer.
     }
 
     // timer handlers
@@ -193,10 +238,11 @@ public class GameRoom extends BaseGameRoom {
     //roundTimer.start(); // vvh - 11/11/24 Starts the timer event
     }
 
-    private void resetRoundTimer(){
-        if(roundTimer != null){
+    private void resetRoundTimer() {
+        if (roundTimer != null) {
             roundTimer.cancel();
             roundTimer = null;
+            sendCurrentTime(TimerType.ROUND, -1);
         }
     }
 
@@ -204,9 +250,14 @@ public class GameRoom extends BaseGameRoom {
         playerAnswers.forEach((clientId, isCorrect) -> {
             if (isCorrect) {
                 ServerPlayer player = playersInRoom.get(clientId);
+                long millis = answerTimeMillis.get(player);
+                long fastest = answerTimeMillis.values().stream().min(Comparator.naturalOrder()).get();
+
                 if (player != null) {
-                    player.incrementScore(10); // vvh - 11/11/24 Award points for correct answer
-                    LoggerUtil.INSTANCE.info("Awarded 10 points to player " + player.getClientName() + ". Total score: " + player.getScore());
+                    // Max increment = 10, increase based on least time taken after first
+                    int points = 10 - (int) ((millis - fastest) / 1000);
+                    player.incrementScore(points);
+                    LoggerUtil.INSTANCE.info("Awarded points to player " + player.getClientName() + ". Total score: " + player.getScore());
                 }
             }
         });
@@ -226,8 +277,8 @@ public class GameRoom extends BaseGameRoom {
         syncScoresWithClients(); //vvh - 11/11/24 Updates all clients with the latest scoreboard
         playerAnswers.clear();
         currentRound++; //vvh - 11/10/24 Increment round counter
-
-        if (currentRound >= MAX_ROUNDS || questions.isEmpty()) {
+        List<QAPayload> categoryQuestions = category.isEmpty() || category.equalsIgnoreCase("All") ? questions : questions.stream().filter(q -> q.getCategory().equalsIgnoreCase(category)).collect(Collectors.toList());
+        if (currentRound >= MAX_ROUNDS || questions.isEmpty() || categoryQuestions.isEmpty()) {
             endSession();  // End the session directly
         } else {
             onRoundStart();
@@ -259,6 +310,9 @@ public class GameRoom extends BaseGameRoom {
         playersInRoom.values().forEach(sp -> sp.resetScore()); // vvh - 11/11/24 Resets all players’ scores
         playerAnswers.clear();
         currentRound = 0;
+        resetRoundTimer();//added
+        resetTurnTimer();
+
     }
 
     private void startTurnTimer(){
@@ -280,22 +334,20 @@ public class GameRoom extends BaseGameRoom {
     protected void onSessionStart(){
         LoggerUtil.INSTANCE.info("onSessionStart() start");
 
-        loadQuestionsFromFile("Project/Resources/questions.txt"); // vvh - 11/10/24 Load questions at the beginning of the session.
+        loadQuestionsFromFile("Resources/questions.txt"); // vvh - 11/10/24 Load questions at the beginning of the session.
         changePhase(Phase.IN_PROGRESS);
 
         LoggerUtil.INSTANCE.info("onSessionStart() end");
-        startRound();// vvh - 11/10/24 Start the first round by selecting and sending a question.
+        onRoundStart();
     }
 
     /** {@inheritDoc} */
     @Override
-    protected void onRoundStart(){
+    protected void onRoundStart() {
         LoggerUtil.INSTANCE.info("onRoundStart() start");
-
-        startRound(); // vvh - 11/10/24 Select and send a question to all clients at the start of the round.
-        resetRoundTimer();
-        startRoundTimer();
-
+        round++;
+        sendGameEvent("Round: " + round);
+        startRound();
         LoggerUtil.INSTANCE.info("onRoundStart() end");
     }
 
@@ -307,30 +359,217 @@ public class GameRoom extends BaseGameRoom {
         startTurnTimer();
         LoggerUtil.INSTANCE.info("onTurnStart() end");
     }
+
     // Note: logic between Turn Start and Turn End is typically handled via timers and user interaction
     /** {@inheritDoc} */
     @Override
     protected void onTurnEnd(){
         LoggerUtil.INSTANCE.info("onTurnEnd() start");
         resetTurnTimer(); // reset timer if turn ended without the time expiring
+        
         LoggerUtil.INSTANCE.info("onTurnEnd() end");
     }
 
     /** {@inheritDoc} */
     @Override
-    protected void onSessionEnd(){
-        endSession();
+    protected void onSessionEnd() {
+        LoggerUtil.INSTANCE.info("onSessionEnd() start");
+        resetReadyStatus();
+        changePhase(Phase.READY);
+        LoggerUtil.INSTANCE.info("onSessionEnd() end");
     }
     // end lifecycle methods
 
-    
-
     // send/sync data to ServerPlayer(s)
+    /**
+     * Sends the turn status of one Player to all Players (including themselves)
+     * 
+     * @param sp
+     */
+    private void sendTurnStatus(ServerPlayer sp) {
+        playersInRoom.values().removeIf(spInRoom -> {
+            boolean failedToSend = !spInRoom.sendTurnStatus(sp.getClientId(), sp.didTakeTurn());
+            if (failedToSend) {
+                removedClient(spInRoom.getServerThread());
+            }
+            return failedToSend;
+        });
+    }
 
-    
+    /**
+     * Sends a game event to all clients
+     * @param str
+     */
+    private void sendGameEvent(String str) {
+        sendGameEvent(str, null);
+    }
+
+    /**
+     * Sends a game event to specific clients (by id)
+     * @param str
+     * @param targets
+     */
+    private void sendGameEvent(String str, List<Long> targets) {
+        playersInRoom.values().removeIf(spInRoom -> {
+            boolean canSend = false;
+            if (targets != null) {
+                if (targets.contains(spInRoom.getClientId())) {
+                    canSend = true;
+                }
+            } else {
+                canSend = true;
+            }
+            if (canSend) {
+                boolean failedToSend = !spInRoom.sendGameEvent(str);
+                if (failedToSend) {
+                    removedClient(spInRoom.getServerThread());
+                }
+                return failedToSend;
+            }
+            return false;
+        });
+    }
+
+    private void sendPointsUpdate(ServerPlayer sp) {
+        playersInRoom.values().removeIf(spInRoom -> {
+            boolean failedToSend = !spInRoom.sendPointsUpdate(sp.getClientId(), sp.getPoints());
+            if (failedToSend) {
+                removedClient(spInRoom.getServerThread());
+            }
+            return failedToSend;
+        });
+    }
     // end send data to ServerPlayer(s)
 
+    // start custom checks
+    private void checkPlayerIsReady(ServerPlayer sp) throws Exception {
+        if (!sp.isReady()) {
+            sp.sendGameEvent("You weren't ready in time");
+            throw new Exception("Player isn't ready");
+        }
+    }
+
+    private void checkPlayerTookTurn(ServerPlayer sp) throws Exception {
+        if (sp.didTakeTurn()) {
+            sp.sendGameEvent("You already took your turn");
+            throw new Exception("Player already took turn");
+        }
+    }
+    // end custom checks
+
     // receive data from ServerThread (GameRoom specific)
-    
+    protected void handleTurn(ServerThread sender) {
+        try {
+            // early exit checks
+            checkPlayerInRoom(sender);
+            checkCurrentPhase(sender, Phase.IN_PROGRESS);
+
+            ServerPlayer sp = playersInRoom.get(sender.getClientId());
+            checkPlayerIsReady(sp);
+            checkPlayerTookTurn(sp);
+
+            sp.setTakeTurn(true);
+            sendTurnStatus(sp);
+            // example of fastest to take a turn
+            long ready = playersInRoom.values().stream().filter(p -> p.isReady()).count() + 1;
+            long tookTurn = playersInRoom.values().stream().filter(p -> p.isReady() && p.didTakeTurn()).count();
+            int points = (int) (ready - tookTurn);
+            sp.changePoints(points);
+            sendPointsUpdate(sp);
+            if (didAllTakeTurn()) {
+                onRoundEnd();
+            }
+
+        } catch (Exception e) {
+            LoggerUtil.INSTANCE.severe("handleReady exception", e);
+        }
+    }
+
     // end receive data from ServerThread (GameRoom specific)
+    // misc logic
+    private boolean didAllTakeTurn() {
+        long ready = playersInRoom.values().stream().filter(p -> p.isReady()).count();
+        long tookTurn = playersInRoom.values().stream().filter(p -> p.isReady() && p.didTakeTurn()).count();
+        LoggerUtil.INSTANCE.info(String.format("didAllTakeTurn() %s/%s", tookTurn, ready));
+        return ready == tookTurn;
+    }
+
+    public void addQuestion(long clientId, Payload payload) {
+        AddQuestionPayload addQuestionPayload = (AddQuestionPayload) payload;
+        saveQuestionToFile(addQuestionPayload);
+    }
+
+    private void saveQuestionToFile(Payload payload) {
+        AddQuestionPayload addQuestionPayload = (AddQuestionPayload) payload;
+        String question = addQuestionPayload.getQuestionText();
+        String category = addQuestionPayload.getCategory();
+        String answerA = addQuestionPayload.getAnswerA();
+        String answerB = addQuestionPayload.getAnswerB();
+        String answerC = addQuestionPayload.getAnswerC();
+        String answerD = addQuestionPayload.getAnswerD();
+        String correctAnswer = addQuestionPayload.getCorrectAnswer();
+
+        String questionData = String.format("\n%s,%s,%s,%s,%s,%s,%s", question, category, answerA, answerB, answerC, answerD, correctAnswer);
+
+        try {
+            Files.write(Paths.get("Resources/questions.txt"), questionData.getBytes(), StandardOpenOption.APPEND);
+            LoggerUtil.INSTANCE.info("Question added to file: " + questionData);
+            sendGameEvent(String.format("%s [%s] added a question in the questions bank.", playersInRoom.get(addQuestionPayload.getClientId()).getClientName(), addQuestionPayload.getClientId()));
+        } catch (IOException e) {
+            LoggerUtil.INSTANCE.severe("Error adding question to file: " + e.getMessage());
+
+        }
+    }
+
+    public void handleAway(long clientId, boolean isAway) {
+        ServerPlayer sp = playersInRoom.get(clientId);
+        if (sp != null) {
+            sp.setAway(isAway);
+            sendGameEvent(String.format("%s [%s] is now %s", sp.getClientName(), sp.getClientId(), isAway ? "away" : "no longer away"));
+            playersInRoom.values().forEach(p -> {
+                p.sendAwayStatus(sp.getClientId(), isAway);
+            });
+        }
+    }
+
+    public void spectate(long clientId, Payload payload) {
+        ServerPlayer sp = playersInRoom.get(clientId);
+        if (sp != null) {
+            boolean isSpectating = payload.getPayloadType() == PayloadType.SPECTATE;
+            sp.setSpectating(isSpectating);
+            sendGameEvent(String.format("%s [%s] is now %s", sp.getClientName(), sp.getClientId(), isSpectating ? "spectating" : "no longer spectating"));
+            playersInRoom.values().forEach(p -> {
+                p.sendSpectateStatus(sp.getClientId(), isSpectating);
+            });
+        }
+    }
+
+    public void sendCategories(long clientId) {
+        ServerPlayer sp = playersInRoom.get(clientId);
+        if (sp != null) {
+            List<String> categories = getQuestionCategories();
+            sp.sendCategories(categories);
+        }
+    }
+
+    public void setCategory(String selectedCategory) {
+        category = selectedCategory;
+        sendGameEvent("Category set to: " + selectedCategory);
+
+        playersInRoom.values().forEach(sp -> {
+            sp.sendCategory(selectedCategory);
+        });
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void sendCategory(long clientId, String currentCategory) {
+        ServerPlayer sp = playersInRoom.get(clientId);
+        if (sp != null) {
+            sp.sendCategory(currentCategory);
+        }
+    }
+    // end misc logic
 }

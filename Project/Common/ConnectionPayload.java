@@ -1,5 +1,7 @@
 package Project.Common;
 
+import Project.Server.Room;
+
 public class ConnectionPayload extends Payload {
     private String clientName;
     private boolean isConnect;
