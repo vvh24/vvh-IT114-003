@@ -1,10 +1,13 @@
 package Project.Server;
 
+import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 
+import Project.Common.AddQuestionPayload;
 import Project.Common.LoggerUtil;
+import Project.Common.Payload;
 
-public class Room implements AutoCloseable{
+public class Room implements AutoCloseable {
     private String name;// unique name of the Room
     protected volatile boolean isRunning = false;
     private ConcurrentHashMap<Long, ServerThread> clientsInRoom = new ConcurrentHashMap<Long, ServerThread>();
@@ -60,15 +63,6 @@ public class Room implements AutoCloseable{
         autoCleanup();
 
     }
-
-    /**
-     * Takes a ServerThread and removes them from the Server
-     * Adding the synchronized keyword ensures that only one thread can execute
-     * these methods at a time,
-     * preventing concurrent modification issues and ensuring thread safety
-     * 
-     * @param client
-     */
     protected synchronized void disconnect(ServerThread client) {
         if (!isRunning) { // block action if Room isn't running
             return;
@@ -79,7 +73,7 @@ public class Room implements AutoCloseable{
         // removedClient(client); // <-- use this just for normal room leaving
         clientsInRoom.remove(client.getClientId());
         LoggerUtil.INSTANCE.fine("Clients remaining in Room: " + clientsInRoom.size());
-        
+
         // Improved logging with user data
         info(String.format("%s[%s] disconnected", client.getClientName(), id));
         autoCleanup();
@@ -118,6 +112,7 @@ public class Room implements AutoCloseable{
             });
         }
         Server.INSTANCE.removeRoom(this);
+        Server.INSTANCE.roomsByOwner.remove(name);
         isRunning = false;
         clientsInRoom.clear();
         info(String.format("closed", name));
@@ -143,7 +138,7 @@ public class Room implements AutoCloseable{
 
     /**
      * Syncs info of existing users in room with the client
-     * 
+     *
      * @param client
      */
     protected synchronized void syncRoomList(ServerThread client) {
@@ -157,7 +152,7 @@ public class Room implements AutoCloseable{
 
     /**
      * Syncs room status of one client to all connected clients
-     * 
+     *
      * @param clientId
      * @param clientName
      * @param isConnect
@@ -182,7 +177,7 @@ public class Room implements AutoCloseable{
      * Adding the synchronized keyword ensures that only one thread can execute
      * these methods at a time,
      * preventing concurrent modification issues and ensuring thread safety
-     * 
+     *
      * @param message
      * @param sender  ServerThread (client) sending the message or null if it's a
      *                server-generated message
@@ -212,9 +207,10 @@ public class Room implements AutoCloseable{
     // end send data to client(s)
 
     // receive data from ServerThread
-    
+
     protected void handleCreateRoom(ServerThread sender, String room) {
         if (Server.INSTANCE.createRoom(room)) {
+            Server.INSTANCE.roomsByOwner.put(room, sender.getClientId());
             Server.INSTANCE.joinRoom(room, sender);
         } else {
             sender.sendMessage(String.format("Room %s already exists", room));
@@ -233,6 +229,54 @@ public class Room implements AutoCloseable{
 
     protected void clientDisconnect(ServerThread sender) {
         disconnect(sender);
+    }
+
+    public void handleAddQuestion(ServerThread serverThread, Payload payload) {
+        AddQuestionPayload addQuestionPayload = (AddQuestionPayload) payload;
+        long clientId = serverThread.getClientId();
+        clientsInRoom.values().forEach(client -> {
+            if (client.getClientId() == clientId) {
+                LoggerUtil.INSTANCE.info("Is question: " + addQuestionPayload.isQuestion());
+                if (!addQuestionPayload.isQuestion()) {
+                    client.sendAddQuestion(clientId);
+                } else {
+                    client.addQuestion(clientId, payload);
+                }
+            }
+        });
+    }
+
+    public void handleSpectate(ServerThread serverThread, Payload payload) {
+        long clientId = serverThread.getClientId();
+        clientsInRoom.values().forEach(client -> {
+            if (client.getClientId() == clientId) {
+                client.spectate(clientId, payload);
+            }
+        });
+    }
+
+    public void handleGetCategories(ServerThread serverThread) {
+        long clientId = serverThread.getClientId();
+        clientsInRoom.values().forEach(client -> {
+            if (client.getClientId() == clientId) {
+                client.sendCategories(clientId);
+            }
+        });
+    }
+
+    public void handleSelectCategory(ServerThread serverThread, Payload payload) {
+        String selectedCategory = payload.getMessage();
+        ((GameRoom)serverThread.getCurrentRoom()).setCategory(selectedCategory);
+    }
+
+    public void handleFetchCategory(ServerThread serverThread, Payload payload) {
+        String currentCategory = ((GameRoom)serverThread.getCurrentRoom()).getCategory();
+        long clientId = serverThread.getClientId();
+        clientsInRoom.values().forEach(client -> {
+            if (client.getClientId() == clientId) {
+                client.sendCategory(clientId, currentCategory);
+            }
+        });
     }
 
     // end receive data from ServerThread

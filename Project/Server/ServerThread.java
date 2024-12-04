@@ -5,16 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import Project.Common.PayloadType;
-import Project.Common.Phase;
-import Project.Common.ReadyPayload;
-import Project.Common.RoomResultsPayload;
-import Project.Common.Payload;
-
-import Project.Common.ConnectionPayload;
-import Project.Common.LoggerUtil;
-import Project.Common.AnswerPayload; //vvh - 11/10/24 Import for handling player answers 
-import Project.Common.QAPayload; // vvh - 11/11/24 Import for handling trivia questions
+import Project.Common.*;
 
 
 /**
@@ -32,7 +23,6 @@ public class ServerThread extends BaseServerThread {
      * Wraps the Socket connection and takes a Server reference and a callback
      * 
      * @param myClient
-     * @param server
      * @param onInitializationComplete method to inform listener that this object is
      *                                 ready
      */
@@ -111,6 +101,19 @@ public class ServerThread extends BaseServerThread {
                 case ROOM_CREATE:
                     currentRoom.handleCreateRoom(this, payload.getMessage());
                     break;
+                case ADD_QUESTION:
+                    currentRoom.handleAddQuestion(this, payload);
+                    break;
+                case SPECTATE:
+                case NOT_SPECTATE:
+                    currentRoom.handleSpectate(this, payload);
+                    try {
+                        // cast to GameRoom as the subclass will handle all Game logic
+                        ((GameRoom) currentRoom).handleReadySpec(this);
+                    } catch (Exception e) {
+                        sendMessage("You must be in a GameRoom to do the ready check");
+                    }
+                    break;
                 case ROOM_JOIN:
                     currentRoom.handleJoinRoom(this, payload.getMessage());
                     break;
@@ -119,6 +122,19 @@ public class ServerThread extends BaseServerThread {
                     break;
                 case DISCONNECT:
                     currentRoom.disconnect(this);
+                    break;
+                case SELECT_CATEGORY:
+                    currentRoom.handleSelectCategory(this, payload);
+                    break;
+                case GET_CATEGORIES:
+                    currentRoom.handleGetCategories(this);
+                    break;
+                case AWAY:
+                case NOT_AWAY:
+                    handleAwayPayload(this, payload);
+                    break;
+                case FETCH_CATEGORY:
+                    currentRoom.handleFetchCategory(this, payload);
                     break;
                 case READY:
                     // no data needed as the intent will be used as the trigger
@@ -134,33 +150,109 @@ public class ServerThread extends BaseServerThread {
                         AnswerPayload answerPayload = (AnswerPayload) payload;
                         String choice = answerPayload.getChoice(); // vvh - 11/11/24 Get the answer choice
                         ((GameRoom) currentRoom).processAnswer(getClientId(), choice); // vvh -11/11/24 Process the answer
-                } else {
-                    LoggerUtil.INSTANCE.severe("Payload is not of type AnswerPayload.");
-                }
-                break;
+                    } else {
+                        LoggerUtil.INSTANCE.severe("Payload is not of type AnswerPayload.");
+                    }
+                    break;
+                case EXAMPLE_TURN:
+                    try {
+                        // cast to GameRoom as the subclass will handle all Game logic
+                        ((GameRoom) currentRoom).handleTurn(this);
+                    } catch (Exception e) {
+                        sendMessage("You must be in a GameRoom to do the example turn");
+                    }
+                    break;
+                default:
+                    break;
             }
         } catch (Exception e) {
             LoggerUtil.INSTANCE.severe("Could not process Payload: " + payload, e);
 
         }
     }
-    // send methods specific to non-chatroom projects
 
-    public boolean sendCurrentPhase(Phase phase){
+    // send methods specific to non-chatroom
+    /**
+     * Syncs a specific client's points
+     * 
+     * @param clientId
+     * @param points
+     * @return
+     */
+    public boolean sendPointsUpdate(long clientId, int points) {
+        PointsPayload rp = new PointsPayload();
+        rp.setPoints(points);
+        rp.setClientId(clientId);
+        return send(rp);
+    }
+
+    /**
+     * Syncs the current time of a specific TimerType
+     * 
+     * @param timerType
+     * @param time
+     * @return
+     */
+    public boolean sendCurrentTime(TimerType timerType, int time) {
+        TimerPayload tp = new TimerPayload();
+        tp.setTime(time);
+        tp.setTimerType(timerType);
+        return send(tp);
+    }
+
+    /**
+     * Sends a message as a GAME_EVENT for non-chat UI
+     * 
+     * @param str
+     * @return
+     */
+    public boolean sendGameEvent(String str) {
+        return sendMessage(Constants.GAME_EVENT_CHANNEL, str);
+    }
+
+    /**
+     * Syncs a specific client's turn status
+     * 
+     * @param clientId
+     * @param didTakeTurn
+     * @return
+     */
+    public boolean sendTurnStatus(long clientId, boolean didTakeTurn) {
+        ReadyPayload rp = new ReadyPayload();
+        rp.setPayloadType(PayloadType.EXAMPLE_TURN);
+        rp.setReady(didTakeTurn);
+        rp.setClientId(clientId);
+        return send(rp);
+    }
+
+    /**
+     * Syncs the currnet phase to the client
+     * 
+     * @param phase
+     * @return
+     */
+    public boolean sendCurrentPhase(Phase phase) {
         Payload p = new Payload();
         p.setPayloadType(PayloadType.PHASE);
         p.setMessage(phase.name());
         return send(p);
     }
-    public boolean sendResetReady(){
+
+    /**
+     * Sends a trigger to have the client-side reset their list of READY state
+     * 
+     * @return
+     */
+    public boolean sendResetReady() {
         ReadyPayload rp = new ReadyPayload();
         rp.setPayloadType(PayloadType.RESET_READY);
         return send(rp);
     }
 
-    public boolean sendReadyStatus(long clientId, boolean isReady){
+    public boolean sendReadyStatus(long clientId, boolean isReady) {
         return sendReadyStatus(clientId, isReady, false);
     }
+    
     /**
      * Sync ready status of client id
      * @param clientId who
@@ -225,11 +317,11 @@ public class ServerThread extends BaseServerThread {
     }
 
     /**
-     * Tells the client information about a client joining/leaving a room
+     * Tells the client information about a client joining/leaving a room.
      * 
      * @param clientId   their unique identifier
      * @param clientName their name
-     * @param room       the room
+     * @param message       the room
      * @param isJoin     true for join, false for leaivng
      * @return success of sending the payload
      */
@@ -237,7 +329,7 @@ public class ServerThread extends BaseServerThread {
         ConnectionPayload cp = new ConnectionPayload();
         cp.setPayloadType(PayloadType.ROOM_JOIN);
         cp.setConnect(isJoin); // <-- determine if join or leave
-        cp.setMessage(room);
+        cp.setMessage(room+"|"+Server.INSTANCE.roomsByOwner.get(room));
         cp.setClientId(clientId);
         cp.setClientName(clientName);
         return send(cp);
@@ -273,6 +365,35 @@ public class ServerThread extends BaseServerThread {
         cp.setClientId(clientId);
         cp.setClientName(clientName);
         return send(cp);
+    }
+
+    public void sendAddQuestion(long clientId) {
+        AddQuestionPayload aqp = new AddQuestionPayload();
+        aqp.setClientId(clientId);
+        aqp.setPayloadType(PayloadType.ADD_QUESTION);
+        send(aqp);
+    }
+
+    public void addQuestion(long clientId, Payload payload) {
+        ((GameRoom)currentRoom).addQuestion(clientId, payload);
+    }
+
+    public void handleAwayPayload(ServerThread serverThread, Payload payload) {
+        long clientId = serverThread.getClientId();
+        boolean isAway = payload.getPayloadType() == PayloadType.AWAY;
+        ((GameRoom)currentRoom).handleAway(clientId, isAway);
+    }
+
+    public void spectate(long clientId, Payload payload) {
+        ((GameRoom)currentRoom).spectate(clientId, payload);
+    }
+
+    public void sendCategories(long clientId) {
+        ((GameRoom)currentRoom).sendCategories(clientId);
+    }
+
+    public void sendCategory(long clientId, String currentCategory) {
+        ((GameRoom)currentRoom).sendCategory(clientId, currentCategory);
     }
 
     // end send methods
