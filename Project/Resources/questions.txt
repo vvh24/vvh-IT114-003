@@ -8,3 +8,4 @@ Who painted the Mona Lisa?,Art,Michelangelo,Leonardo da Vinci,Picasso,Van Gogh,B
 What is the tallest mountain in the world?,Geography,K2,Mount Everest,Kangchenjunga,Lhotse,B
 How many continents are there?,Geography,5,6,7,8,C
 What gas do plants absorb from the atmosphere?,Biology,Hydrogen,Oxygen,Carbon Dioxide,Nitrogen,C
+What is the largest continent?,Geography,Asia,Europe,America,Africa,A

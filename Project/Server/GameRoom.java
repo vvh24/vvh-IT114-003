@@ -45,7 +45,7 @@ public class GameRoom extends BaseGameRoom {
 
     private List<String> getQuestionCategories() {
         if(questions == null) {
-            loadQuestionsFromFile("Resources/questions.txt");
+            loadQuestionsFromFile("Project/Resources/questions.txt");
         }
         return questions.stream().map(QAPayload::getCategory).distinct().collect(Collectors.toList());
     }
@@ -156,7 +156,7 @@ public class GameRoom extends BaseGameRoom {
                 //vvh - 11/10/24 Parse each part to create a QAPayload.
                 String questionText = parts[0];
                 String category = parts[1];
-                List<String> answerOptions = List.of(parts[2], parts[3], parts[4], parts[5]); //vvh - 11/10/24 Adjust this based on file format.
+                List<String> answerOptions = List.of(parts[2], parts[3], parts[4], parts[5]); //vvh - 11/10/24 
                 String correctAnswer = parts[6];
                 
                 //vvh - 11/10/24 Create a new QAPayload object with parsed data.
@@ -316,12 +316,12 @@ public class GameRoom extends BaseGameRoom {
     }
 
     private void startTurnTimer(){
-        turnTimer = new TimedEvent(30, ()-> onTurnEnd());
-        turnTimer.setTickCallback((time)->System.out.println("Turn Time: " + time));
+        turnTimer = new TimedEvent(30, ()-> onTurnEnd());//Initialize the Timer
+        turnTimer.setTickCallback((time)->System.out.println("Turn Time: " + time));//Sets a callback function to be executed at regular intervals 
     }
-    private void resetTurnTimer(){
+    private void resetTurnTimer(){//Cancels the active timer, ensuring that it doesn't trigger the end-of-turn logic
         if(turnTimer != null){
-            turnTimer.cancel();
+            turnTimer.cancel();//Calls the cancel method on the TimedEvent object, which stops the timer from running further
             turnTimer = null;
         }
     }
@@ -334,7 +334,7 @@ public class GameRoom extends BaseGameRoom {
     protected void onSessionStart(){
         LoggerUtil.INSTANCE.info("onSessionStart() start");
 
-        loadQuestionsFromFile("Resources/questions.txt"); // vvh - 11/10/24 Load questions at the beginning of the session.
+        loadQuestionsFromFile("Project/Resources/questions.txt"); // vvh - 11/10/24 Load questions at the beginning of the session.
         changePhase(Phase.IN_PROGRESS);
 
         LoggerUtil.INSTANCE.info("onSessionStart() end");
@@ -512,7 +512,7 @@ public class GameRoom extends BaseGameRoom {
         String questionData = String.format("\n%s,%s,%s,%s,%s,%s,%s", question, category, answerA, answerB, answerC, answerD, correctAnswer);
 
         try {
-            Files.write(Paths.get("Resources/questions.txt"), questionData.getBytes(), StandardOpenOption.APPEND);
+            Files.write(Paths.get("Project/Resources/questions.txt"), questionData.getBytes(), StandardOpenOption.APPEND);
             LoggerUtil.INSTANCE.info("Question added to file: " + questionData);
             sendGameEvent(String.format("%s [%s] added a question in the questions bank.", playersInRoom.get(addQuestionPayload.getClientId()).getClientName(), addQuestionPayload.getClientId()));
         } catch (IOException e) {

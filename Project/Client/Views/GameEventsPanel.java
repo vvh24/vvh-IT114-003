@@ -135,7 +135,7 @@ public class GameEventsPanel extends JPanel implements  IPhaseEvent, IReadyEvent
         }
     }
 
-    @Override
+    @Override//Updates the text of the timerText UI component to display the timer type and current time
     public void onTimerUpdate(TimerType timerType, int time) {
         timerText.setText(String.format("%s timer: %s", timerType.name(), time));
         timerText.setVisible(time > 0);

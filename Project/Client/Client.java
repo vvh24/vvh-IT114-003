@@ -575,8 +575,8 @@ public enum Client {
                 case PayloadType.PHASE:
                     processPhase(payload.getMessage());
                     break;
-                case PayloadType.TIME:
-                    TimerPayload timerPayload = (TimerPayload) payload;
+                case PayloadType.TIME://handles a TimerPayload object
+                    TimerPayload timerPayload = (TimerPayload) payload;//Casts the payload to a TimerPayload object
                     processCurrentTimer(timerPayload.getTimerType(), timerPayload.getTime());
                     break;
                 case PayloadType.EXAMPLE_TURN:
@@ -716,10 +716,10 @@ public enum Client {
         });
     }
 
-    private void processCurrentTimer(TimerType timerType, int time) {
+    private void processCurrentTimer(TimerType timerType, int time) {//Iterate through all registered event listeners
         events.forEach(event -> {
-            if (event instanceof ITimeEvents) {
-                ((ITimeEvents) event).onTimerUpdate(timerType, time);
+            if (event instanceof ITimeEvents) {// Check if the event implements the ITimeEvents interface
+                ((ITimeEvents) event).onTimerUpdate(timerType, time);// Cast the event to ITimeEvents and call the onTimerUpdate method
             }
         });
     }

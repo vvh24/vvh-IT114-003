@@ -59,7 +59,7 @@ public class ReadyPanel extends JPanel {
     }
 
     public void categories(List<String> cats) {
-        LoggerUtil.INSTANCE.info("Categories: " + cats);
+        LoggerUtil.INSTANCE.info("Categories: " + cats);//Logs the list of categories
         categoryDropdown.removeAllItems();
         categoryDropdown.addItem("All");
 
@@ -68,11 +68,11 @@ public class ReadyPanel extends JPanel {
         }
         questionsCategory.add(categoryDropdown);
 
-        JButton chooseCategoriesButton = new JButton();
+        JButton chooseCategoriesButton = new JButton();//Loops through the list of categories and adds each one to the dropdown
         chooseCategoriesButton.setText("Select Category");
-        chooseCategoriesButton.addActionListener(l -> {
+        chooseCategoriesButton.addActionListener(l -> {//retrieves the currently selected item from the dropdown and sends it to the server using sendCategory
             Client.INSTANCE.sendCategory(categoryDropdown.getSelectedItem().toString());
-        });
+        });//Adds the dropdown and button to the questionsCategory panel
         questionsCategory.add(chooseCategoriesButton);
         questionsCategory.revalidate();
         questionsCategory.repaint();

@@ -66,9 +66,9 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         //button A
         answerButtonA = new JButton("A");
         // Fill up the width of the button as parent
-        answerButtonA.setSize(new Dimension(Integer.MAX_VALUE, answerButtonA.getHeight()));
+        answerButtonA.setSize(new Dimension(Integer.MAX_VALUE, answerButtonA.getHeight()));//Sets the button width to fill the maximum available space
         answerButtonA.addActionListener(event->{
-            Client.INSTANCE.sendAnswer("A");
+            Client.INSTANCE.sendAnswer("A");//Sends "A" as the selected answer to the server
             onLockInAnswer(answerButtonA);
         });
         buttonPanel.add(answerButtonA);
@@ -77,7 +77,7 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         answerButtonB = new JButton("B");
         answerButtonB.setSize(new Dimension(Integer.MAX_VALUE, answerButtonB.getHeight()));
         answerButtonB.addActionListener(event->{
-            Client.INSTANCE.sendAnswer("B");
+            Client.INSTANCE.sendAnswer("B");//Sends "B" as the selected answer to the server
             onLockInAnswer(answerButtonB);
 
         });
@@ -87,7 +87,7 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         answerButtonC = new JButton("C");
         answerButtonC.setSize(new Dimension(Integer.MAX_VALUE, answerButtonC.getHeight()));
         answerButtonC.addActionListener(event->{
-            Client.INSTANCE.sendAnswer("C");
+            Client.INSTANCE.sendAnswer("C");//Sends "C" as the selected answer to the server
             onLockInAnswer(answerButtonC);
 
         });
@@ -97,7 +97,7 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         answerButtonD = new JButton("D");
         answerButtonD.setSize(new Dimension(Integer.MAX_VALUE, answerButtonD.getHeight()));
         answerButtonD.addActionListener(event->{
-            Client.INSTANCE.sendAnswer("D");
+            Client.INSTANCE.sendAnswer("D");//Sends "D" as the selected answer to the server
             onLockInAnswer(answerButtonD);
 
         });
@@ -186,12 +186,12 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         }
     }
 
-    public void onLockInAnswer(JButton button) {
-        answerButtonA.setEnabled(false);
+    public void onLockInAnswer(JButton button) {//Disables all answer buttons and highlights the selected answer button
+        answerButtonA.setEnabled(false);// Disable the first answer button (A) 
         answerButtonB.setEnabled(false);
         answerButtonC.setEnabled(false);
         answerButtonD.setEnabled(false);
-        button.setBackground(Color.RED);
+        button.setBackground(Color.RED);//Highlight the selected answer button by changing its background color to red
     }
 
     @Override
@@ -261,10 +261,10 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
             if(Client.INSTANCE.isSpectating()) {
                 LoggerUtil.INSTANCE.info("Spectating, answer is: "+correctAnswer);
                 // correct answer is shown
-                if(correctAnswer.equals("A")) {
+                if(correctAnswer.equals("A")) {//Compares the value of correctAnswer to the string "A"
                     answerButtonA.setBackground(Color.GREEN);
                 } else if(correctAnswer.equals("B")) {
-                    answerButtonB.setBackground(Color.GREEN);
+                    answerButtonB.setBackground(Color.GREEN);//Changes the background color of the corresponding button to green
                 } else if(correctAnswer.equals("C")) {
                     answerButtonC.setBackground(Color.GREEN);
                 } else if(correctAnswer.equals("D")) {
