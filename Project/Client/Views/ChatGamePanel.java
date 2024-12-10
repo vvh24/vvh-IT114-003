@@ -49,8 +49,8 @@ public class ChatGamePanel extends JPanel {
         return chatPanel;
     }
 
-    public GamePanel getGamePanel() {
-        return gamePanel;
+    public GamePanel getGamePanel() { //vvh - 12/09/24 getter method for the gamepanel instance 
+        return gamePanel;//vvh - 12/09/24 returns gamepanel instance 
     }
 
 }

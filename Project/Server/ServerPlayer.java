@@ -97,31 +97,31 @@ public class ServerPlayer extends Player{
         payload.setPayloadType(PayloadType.MESSAGE); //vvh - 11/11/24  Corrected reference to PayloadType
         return client.send(payload); // vvh - 11/11/24 Corrected to use 'payload' instead of 'p'
     }
-
+//vvh-12/09/24 Method to send the away status of a client
     public void sendAwayStatus(long clientId, boolean isAway) {
         Payload payload = new Payload();
-        payload.setClientId(clientId);
+        payload.setClientId(clientId);//vvh-12/09/24 Set the client ID for the payload
         payload.setPayloadType(isAway ? PayloadType.AWAY : PayloadType.NOT_AWAY);
         client.send(payload);
     }
 
     public void sendSpectateStatus(long clientId, boolean isSpectating) {
-        Payload payload = new Payload();
+        Payload payload = new Payload();//vvh-12/09/24 create a new payload for spectating status 
         payload.setClientId(clientId);
         payload.setPayloadType(isSpectating ? PayloadType.SPECTATE : PayloadType.NOT_SPECTATE);
-        client.send(payload);
+        client.send(payload);//vvh-12/09/24 send the payload to the client 
     }
 
-    public void sendCategories(List<String> categories) {
+    public void sendCategories(List<String> categories) {//vvh-12/09/24  method to send a list of categories to the client 
         Payload payload = new Payload();
-        payload.setPayloadType(PayloadType.CATEGORIES);
+        payload.setPayloadType(PayloadType.CATEGORIES);//vvh-12/09/24 set payload type for categories 
         payload.setMessage(String.join("|", categories));
         client.send(payload);
     }
 
-    public void sendCategory(String selectedCategory) {
+    public void sendCategory(String selectedCategory) {//vvh-12/09/24 method to send the selected category to the client
         Payload payload = new Payload();
-        payload.setPayloadType(PayloadType.SELECT_CATEGORY);
+        payload.setPayloadType(PayloadType.SELECT_CATEGORY);//vvh-12/09/24 set the payload type for the selected category 
         payload.setMessage(selectedCategory);
         client.send(payload);
     }

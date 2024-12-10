@@ -90,21 +90,21 @@ public class UserListItem extends JPanel {
         repaint();
     }
 
-    public long getClientId() {
+    public long getClientId() {//vvh-12/09/24 retrieves the id of the client 
         return clientId;
     }
 
-    public void setAwayStatus(boolean isAway) {
+    public void setAwayStatus(boolean isAway) {//vvh-12/09/24 updates the client's away status
         if (isAway) {
-            textContainer.setText(textContainer.getText() + " [AWAY]");
+            textContainer.setText(textContainer.getText() + " [AWAY]");//vvh-12/09/24 appends away to the textcontainer to indicate the client is away 
         } else {
-            textContainer.setText(textContainer.getText().replace(" [AWAY]", ""));
+            textContainer.setText(textContainer.getText().replace(" [AWAY]", ""));//vvh-12/09/24 removes away from the textcontainer when the client is no longer away 
         }
     }
 
-    public void setSpectateStatus(boolean isSpectating) {
+    public void setSpectateStatus(boolean isSpectating) {//vvh-12/09/24 updates client's spectating status 
         if (isSpectating) {
-            textContainer.setText(textContainer.getText() + " [SPECTATING]");
+            textContainer.setText(textContainer.getText() + " [SPECTATING]"); //vvh-12/09/24 appends spectating to the textcontainer to indicate the client is spectating  
         } else {
             textContainer.setText(textContainer.getText().replace(" [SPECTATING]", ""));
         }

@@ -6,7 +6,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.List;
+import java.util.List;//vvh - 12/09/24 Importing List for handling collections
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -18,11 +18,11 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
-import Project.Client.CardView;
-import Project.Client.Client;
-import Project.Client.Interfaces.*;
+import Project.Client.CardView;//vvh - 12/09/24 Importing CardView for managing UI panels
+import Project.Client.Client; 
+import Project.Client.Interfaces.*;//vvh - 12/09/24 Importing all client interfaces for interaction
 import Project.Common.Constants;
-import Project.Common.LoggerUtil;
+import Project.Common.LoggerUtil;//vvh - 12/09/24 Importing LoggerUtil for logging and handling errors
 import Project.Common.Phase;
 import Project.Common.TimerType;
 
@@ -135,7 +135,7 @@ public class GameEventsPanel extends JPanel implements  IPhaseEvent, IReadyEvent
         }
     }
 
-    @Override
+    @Override//Updates the text of the timerText UI component to display the timer type and current time
     public void onTimerUpdate(TimerType timerType, int time) {
         timerText.setText(String.format("%s timer: %s", timerType.name(), time));
         timerText.setVisible(time > 0);

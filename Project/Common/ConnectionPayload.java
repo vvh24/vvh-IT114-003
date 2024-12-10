@@ -1,6 +1,6 @@
 package Project.Common;
 
-import Project.Server.Room;
+import Project.Server.Room;//vvh-12/09/24 Imports room file from Server 
 
 public class ConnectionPayload extends Payload {
     private String clientName;

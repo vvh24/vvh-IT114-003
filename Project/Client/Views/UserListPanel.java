@@ -1,13 +1,13 @@
 package Project.Client.Views;
 
-import java.awt.*;
+import java.awt.*;//vvh-12/09/24 importing awt classes 
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
-import java.util.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;//vvh-12/09/24 importing utility classes 
+import java.util.List;//vvh-12/09/24 importing list 
+import java.util.stream.Collectors;//vvh-12/09/24 importing collectors 
 
 import javax.swing.Box;
 import javax.swing.JPanel;
@@ -30,7 +30,7 @@ public class UserListPanel extends JPanel implements IReadyEvent, IPointsEvent, 
     private JPanel userListArea;
     private GridBagConstraints lastConstraints; // Keep track of the last constraints for the glue
     private HashMap<Long, UserListItem> userItemsMap; // Maintain a map of client IDs to UserListItems
-    List<Long> orderOfComponents;
+    List<Long> orderOfComponents;//vvh-12/09/24 mantains the ordered list of the user IDs for sorting and displaying user list items 
 
     /**
      * Constructor to create the UserListPanel UI.
@@ -38,7 +38,7 @@ public class UserListPanel extends JPanel implements IReadyEvent, IPointsEvent, 
     public UserListPanel() {
         super(new BorderLayout(10, 10));
         userItemsMap = new HashMap<>(); // Initialize the map
-        orderOfComponents = new ArrayList<>();
+        orderOfComponents = new ArrayList<>();//vvh-12/09/24 initializes the list to store the order of user components 
 
         JPanel content = new JPanel(new GridBagLayout());
         userListArea = content;
@@ -126,19 +126,19 @@ public class UserListPanel extends JPanel implements IReadyEvent, IPointsEvent, 
                     userListArea.remove(index);
                 }
             }
-            //Add user item according to sorted key
+            //vvh-12/09/24 Add user item according to sorted key
             userItemsMap.put(clientId, userItem);
-            int indexToPut = 0;
-            for (int i = 0; i < orderOfComponents.size(); i++) {
+            int indexToPut = 0;//vvh-12/09/24 tracks the position to insert the new user based on sorted order 
+            for (int i = 0; i < orderOfComponents.size(); i++) {//vvh-12/09/24 iterates through the list of current users
                 if (clientId < orderOfComponents.get(i)) {
-                    indexToPut = i;
+                    indexToPut = i; //vvh-12/09/24 insert before the current user 
                 } else {
-                    indexToPut = i + 1;
+                    indexToPut = i + 1;//vvh-12/09/24 insert after the current user 
                 }
             }
-            LoggerUtil.INSTANCE.info("Adding user to index: " + indexToPut);
+            LoggerUtil.INSTANCE.info("Adding user to index: " + indexToPut);//vvh-12/09/24 logs the determined index for adding the user 
             userListArea.add(userItem, gbc, indexToPut);
-            orderOfComponents.add(indexToPut, clientId);
+            orderOfComponents.add(indexToPut, clientId);//vvh-12/09/24 adds the client id to the list in the correct order 
             userListArea.add(Box.createVerticalGlue(), lastConstraints);
             userListArea.revalidate();
             userListArea.repaint();
@@ -173,7 +173,7 @@ public class UserListPanel extends JPanel implements IReadyEvent, IPointsEvent, 
                 userListArea.remove(item);
                 userListArea.revalidate();
                 userListArea.repaint();
-                orderOfComponents.remove(clientId);
+                orderOfComponents.remove(clientId);//vvh-12/09/24 removes the user id from the ordered list when a user is removed 
             }
         });
     }
@@ -231,31 +231,31 @@ public class UserListPanel extends JPanel implements IReadyEvent, IPointsEvent, 
         }
     }
 
-    public void sortUserList() {
+    public void sortUserList() {//vvh-12/09/24 sort user list based on client IDs 
         SwingUtilities.invokeLater(() -> {
             LoggerUtil.INSTANCE.info("Sorting user list");
             userItemsMap.forEach((k, v) -> LoggerUtil.INSTANCE.info("User: " + k + " " + v));
-            userListArea.removeAll();
+            userListArea.removeAll();//vvh-12/09/24 clears all current components in the user list area 
             userItemsMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
-                    .forEach(e -> userListArea.add(e.getValue()));
+                    .forEach(e -> userListArea.add(e.getValue()));//vvh-12/09/24 adds sorted user items back to the user list area 
             userListArea.add(Box.createVerticalGlue(), lastConstraints);
             userListArea.revalidate();
             userListArea.repaint();
         });
     }
 
-    public void setUserAwayStatus(long clientId, boolean isAway) {
+    public void setUserAwayStatus(long clientId, boolean isAway) {//vvh-12/09/24 updates the away status
         if (userItemsMap.containsKey(clientId)) {
             SwingUtilities.invokeLater(() -> {
-                userItemsMap.get(clientId).setAwayStatus(isAway);
+                userItemsMap.get(clientId).setAwayStatus(isAway);//vvh-12/09/24 updates the away status of the user in the user list item
             });
         }
     }
 
-    public void setUserSpectateStatus(long clientId, boolean isSpectating) {
+    public void setUserSpectateStatus(long clientId, boolean isSpectating) {//vvh-12/09/24 updates the spectating status
         if (userItemsMap.containsKey(clientId)) {
             SwingUtilities.invokeLater(() -> {
-                userItemsMap.get(clientId).setSpectateStatus(isSpectating);
+                userItemsMap.get(clientId).setSpectateStatus(isSpectating);//vvh-12/09/24 updates the spectating status of the user in the user list item
             });
         }
     }

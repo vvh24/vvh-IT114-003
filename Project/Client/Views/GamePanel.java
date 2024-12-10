@@ -1,21 +1,21 @@
 package Project.Client.Views;
 
-import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.*;//vvh-12/09/24 importing awt classes 
+import java.awt.event.ActionEvent;//vvh-12/09/24 importing actionevent for handling button actions 
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.IOException;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.*;//vvh-12/09/24 importing swing components 
 
 import Project.Client.CardView;
 import Project.Client.Client;
 import Project.Client.Interfaces.ICardControls;
 import Project.Client.Interfaces.IPhaseEvent;
-import Project.Client.Interfaces.IQuestionEvents;
+import Project.Client.Interfaces.IQuestionEvents;//vvh-12/09/24 interface to handle questions events
 import Project.Client.Interfaces.IRoomEvents;
-import Project.Common.*;
+import Project.Common.*;//vvh-12/09/24 importing all common classes 
 
 public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, IPhaseEvent {
 
@@ -23,31 +23,30 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
     private CardLayout cardLayout;
     private static final String READY_PANEL = "READY";
     private static final String PLAY_PANEL = "PLAY";//example panel for this lesson
-    public ReadyPanel readyPanel; 
-    JPanel buttonPanel;
-    JLabel questionCategory;
-    JTextArea questionText = new JTextArea();
+    public ReadyPanel readyPanel; //vvh-12/09/24 Panel shown when the game is in a "ready" phase
+    JPanel buttonPanel;//vvh-12/09/24  Panel containing answer buttons for the game
+    JLabel questionCategory;//vvh-12/09/24 Label to display the category of the current question
+    JTextArea questionText = new JTextArea();//vvh-12/09/24 Text area to display the question text
     JButton answerButtonA = new JButton();
-    JButton answerButtonB = new JButton();
+    JButton answerButtonB = new JButton();//vvh-12/09/24 Button for selecting answer option B
     JButton answerButtonC = new JButton();
     JButton answerButtonD = new JButton();
-    JButton awayButton = new JButton("Mark Away");
-    JButton spectateButton;
+    JButton awayButton = new JButton("Mark Away");//vvh-12/09/24 Button to mark the user as away
+    JButton spectateButton;//vvh-12/09/24 Button to toggle spectating mode
 
 
-    public GamePanel(ICardControls controls) {//milesytone3
+    public GamePanel(ICardControls controls) {
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         this.setAlignmentX(Component.LEFT_ALIGNMENT);
         this.setAlignmentY(Component.TOP_ALIGNMENT);
 
         readyPanel = new ReadyPanel();
 
-        // Create the question category label
+        //vvh-12/09/24 Create the question category label
         questionCategory = new JLabel();
         questionCategory.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
 
-        // Question - 
         questionText = new JTextArea();
         questionText.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         questionText.setLineWrap(true);
@@ -55,7 +54,7 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         questionText.setBackground(null);
         questionText.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
     
-        // Create the buttons and add them to a panel
+        //vvh-12/09/24 Create the buttons and add them to a panel
         buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
         buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -63,45 +62,45 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
 
-        //button A
+        //vvh-12/09/24 button A
         answerButtonA = new JButton("A");
-        // Fill up the width of the button as parent
-        answerButtonA.setSize(new Dimension(Integer.MAX_VALUE, answerButtonA.getHeight()));
+        //vvh-12/09/24 Fill up the width of the button as parent
+        answerButtonA.setSize(new Dimension(Integer.MAX_VALUE, answerButtonA.getHeight()));//Sets the button width to fill the maximum available space
         answerButtonA.addActionListener(event->{
-            Client.INSTANCE.sendAnswer("A");
+            Client.INSTANCE.sendAnswer("A");//vvh-12/09/24 Sends "A" as the selected answer to the server
             onLockInAnswer(answerButtonA);
         });
         buttonPanel.add(answerButtonA);
         buttonPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        //button B
+        //vvh-12/09/24 button B
         answerButtonB = new JButton("B");
         answerButtonB.setSize(new Dimension(Integer.MAX_VALUE, answerButtonB.getHeight()));
         answerButtonB.addActionListener(event->{
-            Client.INSTANCE.sendAnswer("B");
+            Client.INSTANCE.sendAnswer("B");//vvh-12/09/24 Sends "B" as the selected answer to the server
             onLockInAnswer(answerButtonB);
 
         });
         buttonPanel.add(answerButtonB);
         buttonPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        //button C
+        //vvh-12/09/24 button C
         answerButtonC = new JButton("C");
         answerButtonC.setSize(new Dimension(Integer.MAX_VALUE, answerButtonC.getHeight()));
         answerButtonC.addActionListener(event->{
-            Client.INSTANCE.sendAnswer("C");
+            Client.INSTANCE.sendAnswer("C");//vvh-12/09/24 Sends "C" as the selected answer to the server
             onLockInAnswer(answerButtonC);
 
         });
         buttonPanel.add(answerButtonC);
         buttonPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        //button D
+        //vvh-12/09/24 button D
         answerButtonD = new JButton("D");
         answerButtonD.setSize(new Dimension(Integer.MAX_VALUE, answerButtonD.getHeight()));
         answerButtonD.addActionListener(event->{
-            Client.INSTANCE.sendAnswer("D");
+            Client.INSTANCE.sendAnswer("D");//vvh-12/09/24 Sends "D" as the selected answer to the server
             onLockInAnswer(answerButtonD);
 
         });
-        buttonPanel.add(answerButtonD);
+        buttonPanel.add(answerButtonD);//vvh-12/09/24
         buttonPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 
         JPanel gameContainer = new JPanel(new CardLayout());
@@ -113,31 +112,31 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         gameContainer.add(READY_PANEL, readyPanel);
 
         playPanel = new JPanel();
-        playPanel.setLayout(new BoxLayout(playPanel, BoxLayout.Y_AXIS));
-        playPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        playPanel.setLayout(new BoxLayout(playPanel, BoxLayout.Y_AXIS));//vvh-12/09/24 Creates the layout manager for the play panel to organize its components vertically
+        playPanel.setAlignmentX(Component.LEFT_ALIGNMENT);//vvh-12/09/24 Aligns all components in the play panel to the left
         playPanel.setAlignmentY(Component.TOP_ALIGNMENT);
         playPanel.setName(PLAY_PANEL);
-        playPanel.add(questionCategory);
-        playPanel.add(questionText);
+        playPanel.add(questionCategory);//vvh-12/09/24 Adds the question category label to the play panel
+        playPanel.add(questionText);//vvh-12/09/24 Adds the question text area to the play panel
         playPanel.add(buttonPanel);
-//        playPanel.add(Box.createVerticalGlue());
-        awayButton.addActionListener(event->{
-            onAwayButtonClicked(event);
+//vvh-12/09/24   playPanel.add(Box.createVerticalGlue());
+        awayButton.addActionListener(event->{//vvh-12/09/24 adds an action listener to the away button to handle clicks 
+            onAwayButtonClicked(event);//vvh-12/09/24 calls the method to process the away button click event 
         });
-        playPanel.add(awayButton);
+        playPanel.add(awayButton);//vvh-12/09/24 Adds the "away" button to the play panel, allowing users to mark themselves as away
         playPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-
+//vvh-12/09/24 Button text changes based on the current spectating status
         spectateButton = new JButton(Client.INSTANCE.isSpectating() ? "Stop Spectating" : "Spectate");
         spectateButton.addActionListener(event->{
-            if(Client.INSTANCE.isSpectating()) {
+            if(Client.INSTANCE.isSpectating()) {//vvh-12/09/24 sends a request to start spectating
                 Client.INSTANCE.sendSpectate(PayloadType.NOT_SPECTATE);
-                spectateButton.setText("Spectate");
+                spectateButton.setText("Spectate");//vvh-12/09/24 updates the button to spectate
             } else {
                 Client.INSTANCE.sendSpectate(PayloadType.SPECTATE);
                 spectateButton.setText("Stop Spectating");
-                Client.INSTANCE.sendAnswer("AWAY");
+                Client.INSTANCE.sendAnswer("AWAY");//vvh-12/09/24 sends away answer to the server
                 answerButtonA.setEnabled(false);
-                answerButtonB.setEnabled(false);
+                answerButtonB.setEnabled(false);//vvh-12/09/24 disables the answer button for option B while spectating 
                 answerButtonC.setEnabled(false);
                 answerButtonD.setEnabled(false);
             }
@@ -170,7 +169,7 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         setVisible(false);
     }
 
-    private void onAwayButtonClicked(ActionEvent event) {
+    private void onAwayButtonClicked(ActionEvent event) {//vvh-12/09/24 handles the action when the away button is clickled 
         String away = ((JButton) event.getSource()).getText();
         if (away.equals("Mark Away")) {
             Client.INSTANCE.sendAwayPayload(PayloadType.AWAY);
@@ -186,12 +185,12 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
         }
     }
 
-    public void onLockInAnswer(JButton button) {
-        answerButtonA.setEnabled(false);
+    public void onLockInAnswer(JButton button) {//vvh-12/09/24 Disables all answer buttons and highlights the selected answer button
+        answerButtonA.setEnabled(false);//vvh-12/09/24 Disable the first answer button (A) 
         answerButtonB.setEnabled(false);
         answerButtonC.setEnabled(false);
         answerButtonD.setEnabled(false);
-        button.setBackground(Color.RED);
+        button.setBackground(Color.RED);//vvh-12/09/24 Highlight the selected answer button by changing its background color to red
     }
 
     @Override
@@ -204,19 +203,19 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
     }
 
     @Override
-    public void onReceivePhase(Phase phase) {
+    public void onReceivePhase(Phase phase) {//vvh-12/09/24 Handles phase changes
         System.out.println("Received phase: " + phase.name());
         if (!isVisible()) {
             setVisible(true);
             getParent().revalidate();
-            getParent().repaint();
+            getParent().repaint();//vvh-12/09/24
             System.out.println("GamePanel visible");
         }
-        if (phase == Phase.READY) {
+        if (phase == Phase.READY) {//vvh-12/09/24 Checks if the game phase is ready
             cardLayout.show(playPanel.getParent(), READY_PANEL);
             readyPanel.fetchCurrentCategory();
             buttonPanel.setVisible(false);
-        } else if (phase == Phase.IN_PROGRESS) {
+        } else if (phase == Phase.IN_PROGRESS) {//vvh-12/09/24 checks if the game is in-progress
             cardLayout.show(playPanel.getParent(), PLAY_PANEL);
             buttonPanel.setVisible(true);
         }
@@ -228,31 +227,31 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
     }
 
     @Override
-    public void onAddQuestion() {
+    public void onAddQuestion() {//vvh-12/09/24 Opens a dialog for adding a new question
         AddQuestionDialog dialog = new AddQuestionDialog();
         dialog.setVisible(true);
     }
 
     @Override
     public void onQuestionReceived(String category, String question, List<String> answerOptions, String correctAnswer) {
-        questionCategory.setText("Category: "+category);
+        questionCategory.setText("Category: "+category);//vvh-12/09/24 Sets the category label to display the received category
         questionText.setText("Question: "+question);
         answerButtonA.setText(answerOptions.get(0));
         answerButtonB.setText(answerOptions.get(1));
         answerButtonC.setText(answerOptions.get(2));
         answerButtonD.setText(answerOptions.get(3));
-
+//vvh-12/09/24 Resets the background of answer button 
         answerButtonA.setBackground(null);
         answerButtonB.setBackground(null);
         answerButtonC.setBackground(null);
         answerButtonD.setBackground(null);
-
+//vvh-12/09/24
         if(!Client.INSTANCE.isAway() && !Client.INSTANCE.isSpectating()) {
             answerButtonA.setEnabled(true);
             answerButtonB.setEnabled(true);
             answerButtonC.setEnabled(true);
             answerButtonD.setEnabled(true);
-        } else {
+        } else {//vvh-12/09/24
             answerButtonA.setEnabled(false);
             answerButtonB.setEnabled(false);
             answerButtonC.setEnabled(false);
@@ -260,11 +259,11 @@ public class GamePanel extends JPanel implements IQuestionEvents, IRoomEvents, I
             Client.INSTANCE.sendAnswer("AWAY");
             if(Client.INSTANCE.isSpectating()) {
                 LoggerUtil.INSTANCE.info("Spectating, answer is: "+correctAnswer);
-                // correct answer is shown
-                if(correctAnswer.equals("A")) {
+                //vvh-12/09/24correct answer is shown
+                if(correctAnswer.equals("A")) {//vvh-12/09/24 Compares the value of correctAnswer to the string "A"
                     answerButtonA.setBackground(Color.GREEN);
                 } else if(correctAnswer.equals("B")) {
-                    answerButtonB.setBackground(Color.GREEN);
+                    answerButtonB.setBackground(Color.GREEN);//vvh-12/09/24 Changes the background color of the corresponding button to green
                 } else if(correctAnswer.equals("C")) {
                     answerButtonC.setBackground(Color.GREEN);
                 } else if(correctAnswer.equals("D")) {

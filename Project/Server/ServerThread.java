@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import Project.Common.*;
+import Project.Common.*;//vvh-12/09/24 importing common classes 
 
 
 /**
@@ -101,14 +101,14 @@ public class ServerThread extends BaseServerThread {
                 case ROOM_CREATE:
                     currentRoom.handleCreateRoom(this, payload.getMessage());
                     break;
-                case ADD_QUESTION:
+                case ADD_QUESTION://vvh-12/09/24 handle adding question to the game room
                     currentRoom.handleAddQuestion(this, payload);
                     break;
-                case SPECTATE:
-                case NOT_SPECTATE:
+                case SPECTATE://vvh-12/09/24 handles the spectate action
+                case NOT_SPECTATE://vvh-12/09/24 handle stop spectating status 
                     currentRoom.handleSpectate(this, payload);
                     try {
-                        // cast to GameRoom as the subclass will handle all Game logic
+                        //vvh-12/09/24 cast to GameRoom as the subclass will handle all Game logic
                         ((GameRoom) currentRoom).handleReadySpec(this);
                     } catch (Exception e) {
                         sendMessage("You must be in a GameRoom to do the ready check");
@@ -123,17 +123,17 @@ public class ServerThread extends BaseServerThread {
                 case DISCONNECT:
                     currentRoom.disconnect(this);
                     break;
-                case SELECT_CATEGORY:
+                case SELECT_CATEGORY://vvh-12/09/24 handle selecting a category in the game room 
                     currentRoom.handleSelectCategory(this, payload);
                     break;
-                case GET_CATEGORIES:
+                case GET_CATEGORIES://vvh-12/09/24 handle fetching a list of categories from the game room
                     currentRoom.handleGetCategories(this);
                     break;
-                case AWAY:
-                case NOT_AWAY:
-                    handleAwayPayload(this, payload);
-                    break;
-                case FETCH_CATEGORY:
+                case AWAY://vvh-12/09/24 handle setting the client as away
+                case NOT_AWAY://vvh-12/09/24 handle setting the client as not away
+                    handleAwayPayload(this, payload);//vvh-12/09/24 process the away status change payload
+                    break; 
+                case FETCH_CATEGORY://vvh-12/09/24 handle fetching the currently selected category 
                     currentRoom.handleFetchCategory(this, payload);
                     break;
                 case READY:
@@ -366,32 +366,32 @@ public class ServerThread extends BaseServerThread {
         cp.setClientName(clientName);
         return send(cp);
     }
-
+//vvh-12/09/24 Method to send an "Add Question" request to the client
     public void sendAddQuestion(long clientId) {
         AddQuestionPayload aqp = new AddQuestionPayload();
-        aqp.setClientId(clientId);
+        aqp.setClientId(clientId); //vvh-12/09/24 Set the client ID for the payload
         aqp.setPayloadType(PayloadType.ADD_QUESTION);
-        send(aqp);
+        send(aqp);//vvh-12/09/24 Send the payload to the client
     }
-
+//vvh-12/09/24 Method to handle adding a question in the game room
     public void addQuestion(long clientId, Payload payload) {
-        ((GameRoom)currentRoom).addQuestion(clientId, payload);
+        ((GameRoom)currentRoom).addQuestion(clientId, payload); //vvh-12/09/24 Forward the payload to the current game room's addQuestion method
     }
-
+//vvh-12/09/24 Method to handle the "away" status change for a client
     public void handleAwayPayload(ServerThread serverThread, Payload payload) {
         long clientId = serverThread.getClientId();
         boolean isAway = payload.getPayloadType() == PayloadType.AWAY;
         ((GameRoom)currentRoom).handleAway(clientId, isAway);
     }
-
+//vvh-12/09/24 Method to handle the "spectate" action for a client
     public void spectate(long clientId, Payload payload) {
         ((GameRoom)currentRoom).spectate(clientId, payload);
     }
-
+//vvh-12/09/24  Method to send the list of categories to a client
     public void sendCategories(long clientId) {
-        ((GameRoom)currentRoom).sendCategories(clientId);
+        ((GameRoom)currentRoom).sendCategories(clientId); //vvh-12/09/24 Delegate sending categories to the current game room
     }
-
+//vvh-12/09/24 Method to send the selected category to a client
     public void sendCategory(long clientId, String currentCategory) {
         ((GameRoom)currentRoom).sendCategory(clientId, currentCategory);
     }
