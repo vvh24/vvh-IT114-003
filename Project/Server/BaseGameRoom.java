@@ -167,8 +167,8 @@ public abstract class BaseGameRoom extends Room {
 
     protected void resetReadyStatus() {
         playersInRoom.values().forEach(p -> {
-            p.setAway(false);
-            p.setSpectating(false);
+            p.setAway(false);//vvh-12/09/24 Resets the "away" status for each player to false, marking them as active
+            p.setSpectating(false);//vvh-12/09/24 Resets the "spectating" status for each player to false, marking them as not spectating
             p.setReady(false);
         });
         sendResetReadyTrigger();

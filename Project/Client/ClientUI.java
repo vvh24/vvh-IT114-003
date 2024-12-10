@@ -5,7 +5,7 @@ import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.event.*;
+import java.awt.event.*;//vvh-12/09/24 adding events classes
 import java.io.IOException;
 import java.util.List;
 import javax.swing.JFrame;
@@ -15,7 +15,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import Project.Client.Interfaces.*;
+import Project.Client.Interfaces.*;//vvh-12/09/24 adding all interfaces files 
 import Project.Client.Views.ChatGamePanel;
 import Project.Client.Views.ConnectionPanel;
 import Project.Client.Views.Menu;
@@ -42,7 +42,7 @@ public class ClientUI extends JFrame implements ICategoryEvents, ISpectateEvents
     private RoomsPanel roomsPanel;
     private JLabel roomLabel = new JLabel();
 
-    private boolean isSortedUserList = false;
+    private boolean isSortedUserList = false;//vvh-12/09/24 tracks whether the user list is currently sorted 
 
     {
         // Note: Moved from Client as this file is the entry point now
@@ -83,7 +83,7 @@ public class ClientUI extends JFrame implements ICategoryEvents, ISpectateEvents
             }
         });
 
-        setMinimumSize(new Dimension(600, 600));
+        setMinimumSize(new Dimension(600, 600));//vvh-12/09/24 changed size dimension 
         setLocationRelativeTo(null); // Center the window
         menu = new Menu(this);
         this.setJMenuBar(menu);
@@ -112,28 +112,28 @@ public class ClientUI extends JFrame implements ICategoryEvents, ISpectateEvents
             }
         });
         
-        this.addHierarchyListener(new HierarchyListener() {
+        this.addHierarchyListener(new HierarchyListener() {//vvh-12/09/24 adds a listener to detect chanages in the component hierarchy 
 
             @Override
-            public void hierarchyChanged(HierarchyEvent e) {
+            public void hierarchyChanged(HierarchyEvent e) {//vvh-12/09/24 handles changes in the component hierarchy and sets up listeners if connected 
                 boolean connected = setupListenersWhenConnected();
 
-                if (connected) {
+                if (connected) {//vvh-12/09/24 Removes the hierarchy listener once the setup is complete and the connection is established
                     ClientUI.this.removeHierarchyListener(this);
                 }
             }
 
-            private boolean setupListenersWhenConnected() {
+            private boolean setupListenersWhenConnected() {//vvh-12/09/24 Checks if the window's parent frame is connected and adds appropriate listeners
                 JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(ClientUI.this);
                 if (parentFrame == null) {
                     return false;
                 }
-                parentFrame.addWindowListener(new WindowAdapter() {
+                parentFrame.addWindowListener(new WindowAdapter() {//vvh-12/09/24 Adds a window listener to handle the closing event of the parent frame
 
                     @Override
-                    public void windowClosing(WindowEvent e) {
+                    public void windowClosing(WindowEvent e) {//vvh-12/09/24 Handles the closing of the parent frame and sends a disconnect request
                         try {
-                            Client.INSTANCE.sendDisconnect();
+                            Client.INSTANCE.sendDisconnect();//vvh-12/09/24 Sends a disconnect payload when the window is closing
                         } catch (NullPointerException | IOException ex) {
                             LoggerUtil.INSTANCE.severe("Error during disconnect: " + ex.getMessage());
                         }
@@ -143,11 +143,11 @@ public class ClientUI extends JFrame implements ICategoryEvents, ISpectateEvents
             }
         });
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {//vvh-12/09/24 Adds a shutdown hook to perform cleanup tasks when the JVM shuts down
             LoggerUtil.INSTANCE.info("JVM is shutting down. Perform cleanup tasks.");
             try {
-                Client.INSTANCE.sendDisconnect();
-            } catch (IOException e) {
+                Client.INSTANCE.sendDisconnect();//vvh-12/09/24 Sends a disconnect payload during the JVM shutdown process
+            } catch (IOException e) {//vvh-12/09/24 Handles errors if sending the disconnect payload fails
                 LoggerUtil.INSTANCE.severe("Error during disconnect: " + e.getMessage());
             }
         }));
@@ -155,7 +155,7 @@ public class ClientUI extends JFrame implements ICategoryEvents, ISpectateEvents
         pack(); // Resize to fit components
         setVisible(true); // Show the window
 
-//        // After each 3 seconds, sort the user list
+//vvh-12/09/24  //After each 3 seconds, sort the user list
 //        new Thread(() -> {
 //            while (true) {
 //                try {
@@ -273,7 +273,7 @@ public class ClientUI extends JFrame implements ICategoryEvents, ISpectateEvents
         if (currentCard.ordinal() >= CardView.CHAT.ordinal()) {
             chatGamePanel.getChatPanel().addUserListItem(clientId, String.format("%s (%s)", clientName, clientId));
         }
-        isSortedUserList = false;
+        isSortedUserList = false;//vvh-12/09/24 Resets the user list sorting state when synchronizing a client
     }
 
     @Override
@@ -311,31 +311,31 @@ public class ClientUI extends JFrame implements ICategoryEvents, ISpectateEvents
     }
 
     @Override
-    public void onAwayStatus(long clientId, boolean isAway) {
+    public void onAwayStatus(long clientId, boolean isAway) {//vvh-12/09/24 Updates the away status for a client in the chat panel
         if (currentCard.ordinal() >= CardView.CHAT.ordinal()) {
             chatGamePanel.getChatPanel().setUserAwayStatus(clientId, isAway);
         }
     }
 
     @Override
-    public void onSpectateStatus(long clientId, boolean isSpectating) {
+    public void onSpectateStatus(long clientId, boolean isSpectating) {//vvh-12/09/24 Updates the spectating status for a client in the chat panel
         if (currentCard.ordinal() >= CardView.CHAT.ordinal()) {
             chatGamePanel.getChatPanel().setUserSpectateStatus(clientId, isSpectating);
         }
     }
 
     @Override
-    public void onReceiveCategories(List<String> categories) {
-//        if (currentCard.ordinal() >= CardView.CHAT.ordinal()) {
+    public void onReceiveCategories(List<String> categories) {//vvh-12/09/24 Receives a list of categories and updates the ready panel in the game panel
+//vvh-12/09/24        if (currentCard.ordinal() >= CardView.CHAT.ordinal()) {
             chatGamePanel.getGamePanel().readyPanel.categories(categories);
-//        }
+//vvh-12/09/24        }
     }
 
     @Override
-    public void onCategorySelected(String category) {
-//        if (currentCard.ordinal() >= CardView.CHAT.ordinal()) {
+    public void onCategorySelected(String category) {//vvh-12/09/24 Updates the ready panel with the selected category in the game panel
+//vvh-12/09/24        if (currentCard.ordinal() >= CardView.CHAT.ordinal()) {
             chatGamePanel.getGamePanel().readyPanel.categorySelected(category);
-//        }
+//vvh-12/09/24        }
     }
     // Interface methods end
 }

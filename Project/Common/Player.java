@@ -7,8 +7,8 @@ public class Player {
     public static long DEFAULT_CLIENT_ID = -1L;
     private long clientId = Player.DEFAULT_CLIENT_ID;
     private boolean isReady = false;
-    public boolean isAway = false;
-    public boolean isSpectating = false;
+    public boolean isAway = false;//vvh-12/09/24 Tracks whether the player is marked as "away"
+    public boolean isSpectating = false;//vvh-12/09/24  racks whether the player is in spectating mode
     private boolean takeTurn = false;
     private int points = 0;
     public long getClientId() {
@@ -53,11 +53,11 @@ public class Player {
         this.points = 0;
     }
 
-    public void setAway(boolean isAway) {
-        this.isAway = isAway;
+    public void setAway(boolean isAway) {//vvh-12/09/24 Updates the player's away status
+        this.isAway = isAway;//vvh-12/09/24 Sets whether the player is marked as away
     }
 
-    public void setSpectating(boolean isSpectating) {
-        this.isSpectating = isSpectating;
+    public void setSpectating(boolean isSpectating) {//vvh-12/09/24 Updates the player's spectating status
+        this.isSpectating = isSpectating;//vvh-12/09/24 Sets whether the player is in spectating mode
     }
 }

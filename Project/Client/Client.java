@@ -6,7 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList; //UI new addition to the code
-import java.util.Arrays;
+import java.util.Arrays;//vvh-12/09/24 imports arrays 
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
@@ -14,8 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import Project.Client.Interfaces.*;
-import Project.Common.*;
+import Project.Client.Interfaces.*;//vvh-12/09/24 imports all interfaces files
+import Project.Common.*;//vvh-12/09/24 imports all commons files
 import Project.Common.TextFX.Color;
 
 /**
@@ -568,8 +568,8 @@ public enum Client {
                     // note no data necessary as this is just a trigger
                     processResetReady();
                     break;
-                case SPECTATE: 
-                case NOT_SPECTATE:
+                case SPECTATE: //vvh-12/09/24 handles spectate payload type indicating user has started spectating
+                case NOT_SPECTATE://vvh-12/09/24 handles not_spectate payload type indicating user has stopped spectating 
                     processSpectatePayload(payload);
                     break;
                 case PayloadType.PHASE:
@@ -583,28 +583,28 @@ public enum Client {
                     ReadyPayload tp = (ReadyPayload) payload;
                     processTurnStatus(tp.getClientId(), tp.isReady());
                     break;
-                case ADD_QUESTION: 
-                    LoggerUtil.INSTANCE.info("Received ADD_QUESTION payload");//added
-                    AddQuestionPayload aqp = (AddQuestionPayload) payload;//added
-                    if(!aqp.isQuestion()) processAddQuestionPayload();//added
+                case ADD_QUESTION: //vvh-12/09/24 handles add_question payload, triggered the process to add a question
+                    LoggerUtil.INSTANCE.info("Received ADD_QUESTION payload");////vvh-12/09/24 logs the receipt of an add_question payload 
+                    AddQuestionPayload aqp = (AddQuestionPayload) payload;////vvh-12/09/24 casts the payload to an addquestionpayload object
+                    if(!aqp.isQuestion()) processAddQuestionPayload();////vvh-12/09/24 processes the payload if it doesnt contain a question
                     break;
-                case AWAY:
-                case NOT_AWAY:
-                    processAwayPayload(payload);
+                case AWAY://vvh-12/09/24 handles a received away payload 
+                case NOT_AWAY://vvh-12/09/24 handles a received not_away payload 
+                    processAwayPayload(payload);//vvh-12/09/24 processes payload to update away status 
+                    break; 
+                case CATEGORIES://vvh-12/09/24 handles payload containing a list of categories 
+                    processCategories(payload);//vvh-12/09/24 processes the payload to update the category list for the ui
                     break;
-                case CATEGORIES:
-                    processCategories(payload);
-                    break;
-                case SELECT_CATEGORY:
-                    processCategorySelection(payload);
+                case SELECT_CATEGORY://vvh-12/09/24 handles payload indicating the category has been selected 
+                    processCategorySelection(payload);//vvh-12/09/24 processes the selected category payload 
                     break;
                 case PayloadType.QUESTION: //vvh - 11/11/24 Handles a received QUESTION payload, displaying the question and options to the client
                     QAPayload questionPayload = (QAPayload) payload;
                     processQuestion(
-                        questionPayload.getCategory(),
-                        questionPayload.getQuestionText(),
-                        questionPayload.getAnswerOptions(),
-                        questionPayload.getCorrectAnswer()
+                        questionPayload.getCategory(),//vvh-12/09/24 passes the questions category
+                        questionPayload.getQuestionText(),//vvh-12/09/24 passes the question text 
+                        questionPayload.getAnswerOptions(),//vvh-12/09/24 passes the list of answer options
+                        questionPayload.getCorrectAnswer()//vvh-12/09/24 passes the correct answer 
                     );
 
                     // Notify all callbacks about the received question
@@ -628,57 +628,57 @@ public enum Client {
         }
     }
 
-    private void processCategorySelection(Payload payload) {
-        events.forEach(event -> {
-            if (event instanceof ICategoryEvents) {
+    private void processCategorySelection(Payload payload) {//vvh-12/09/24 processes the selected category payload 
+        events.forEach(event -> {//vvh-12/09/24
+            if (event instanceof ICategoryEvents) {//vvh-12/09/24 checks if the event implements ICategoryEvents 
                 ((ICategoryEvents) event).onCategorySelected(payload.getMessage());
             }
         });
     }
 
-    private void processCategories(Payload payload) {
+    private void processCategories(Payload payload) {//vvh-12/09/24 processes payload containing a list of categories 
         List<String> categories = Arrays.stream(payload.getMessage().split("\\|")).toList();
         events.forEach(event -> {
-            if (event instanceof ICategoryEvents) {
+            if (event instanceof ICategoryEvents) {//vvh-12/09/24 checks if event implements ICategoryEvents 
                 ((ICategoryEvents) event).onReceiveCategories(categories);
             }
         });
     }
 
-    private void processSpectatePayload(Payload payload) {
+    private void processSpectatePayload(Payload payload) {//vvh-12/09/24 processes payload indicating spectate status
         ClientPlayer cp = knownClients.get(payload.getClientId());
-        if (cp == null) {
+        if (cp == null) {//vvh-12/09/24 logs an error if the client is not known 
             LoggerUtil.INSTANCE.severe("Received spectate payload for unknown client id " + payload.getClientId());
             return;
         }
-        cp.setSpectating(payload.getPayloadType() == PayloadType.SPECTATE);
+        cp.setSpectating(payload.getPayloadType() == PayloadType.SPECTATE);//vvh-12/09/24 Updates the client's spectating status 
         events.forEach(event -> {
-            if (event instanceof ISpectateEvents) {
+            if (event instanceof ISpectateEvents) {//vvh-12/09/24 checks if the event implements ISpectateEvents
                 ((ISpectateEvents) event).onSpectateStatus(payload.getClientId(), payload.getPayloadType() == PayloadType.SPECTATE);
             }
         });
     }
 
-    private void processAwayPayload(Payload payload) {
+    private void processAwayPayload(Payload payload) {//vvh-12/09/24 process payload indicating away status 
         Client.INSTANCE.knownClients.get(payload.getClientId()).setAway(payload.getPayloadType() == PayloadType.AWAY);
         events.forEach(event -> {
-            if (event instanceof IAwayStatus) {
+            if (event instanceof IAwayStatus) {//vvh-12/09/24 checks if the event implements IAwayStatus 
                 ((IAwayStatus) event).onAwayStatus(payload.getClientId(), payload.getPayloadType() == PayloadType.AWAY);
             }
         });
     }
 
-    private void processAddQuestionPayload() {
+    private void processAddQuestionPayload() {//vvh-12/09/24 processes a payload to trigger the add question functionality 
         events.forEach(event -> {
             if (event instanceof IQuestionEvents) {
                 ((IQuestionEvents) event).onAddQuestion();
             }
         });
     }
-
+//vvh-12/09/24 processes and notifies about a received question
     private void processQuestion(String category, String questionText, List<String> answerOptions, String correctAnswer) {
         LoggerUtil.INSTANCE.info("Received question: " + questionText);
-        events.forEach(event -> {
+        events.forEach(event -> {//vvh-12/09/24 iterates through registered events to notify about the received question
             if (event instanceof IQuestionEvents) {
                 ((IQuestionEvents) event).onQuestionReceived(category, questionText, answerOptions, correctAnswer);
             }
@@ -773,17 +773,17 @@ public enum Client {
 
     private void processResetReady() {
         knownClients.values().forEach(cp -> {
-            cp.setReady(false);
-            cp.setAway(false);
-            cp.setSpectating(false);
+            cp.setReady(false);//vvh-12/09/24 resets the ready status of the client to false
+            cp.setAway(false);//vvh-12/09/24 resets the away status of the client to false 
+            cp.setSpectating(false);//vvh-12/09/24 resets the spectating status of the client to false 
             events.forEach(event -> {
-                if (event instanceof ISpectateEvents) {
-                    ((ISpectateEvents) event).onSpectateStatus(cp.getClientId(), false);
+                if (event instanceof ISpectateEvents) {//vvh-12/09/24 checks if the event implements ISpectateEvents
+                    ((ISpectateEvents) event).onSpectateStatus(cp.getClientId(), false);// sends an update to indicate the client is not longer spectating 
                 }
             });
 
-            events.forEach(event -> {
-                if (event instanceof IAwayStatus) {
+            events.forEach(event -> {//vvh-12/09/24 iterates through all events to notify about the client's away status 
+                if (event instanceof IAwayStatus) {//vvh-12/09/24 checks if the current event implements IAwayStatus 
                     ((IAwayStatus) event).onAwayStatus(cp.getClientId(), false);
                 }
             });
@@ -933,13 +933,13 @@ public enum Client {
             }
         }
     }
-    private void sendGetCategories(long clientId, String room) {
+    private void sendGetCategories(long clientId, String room) {//vvh-12/09/24 sends a request to fecth categories for a specified client and room 
         GetCategoriesPayload gcp = new GetCategoriesPayload();
         gcp.setClientId(clientId);
         gcp.setRoom(room);
         try {
             send(gcp);
-        } catch (IOException e) {
+        } catch (IOException e) {//vvh-12/09/24 handles errors if sending the payload fails 
             LoggerUtil.INSTANCE.severe("Failed to send get categories payload", e);
         }
     }
@@ -954,69 +954,69 @@ public enum Client {
         System.out.println("Please type A, B, C, or D to answer.");//vvh - 11/11/24 Prompt for answer
     }
 
-    public void sendAddQuestion() {
+    public void sendAddQuestion() {//vvh-12/09/24 send request to add a question
         AddQuestionPayload addQuestionPayload = new AddQuestionPayload();
         try {
-            send(addQuestionPayload);
+            send(addQuestionPayload);//vvh-12/09/24 sends the payload to the server 
         } catch (IOException e) {
             LoggerUtil.INSTANCE.severe("Failed to send add question payload", e);
         }
     }
-
+//vvh-12/09/24 send a reques to add questions with details 
     public void sendAddQuestion(String question, String category, String a, String b, String c, String d, String correct) {
         AddQuestionPayload addQuestionPayload = new AddQuestionPayload(question, category, a, b, c, d, correct);
         try {
-            send(addQuestionPayload);
+            send(addQuestionPayload);//vvh-12/09/24 send payload to the server 
         } catch (IOException e) {
             LoggerUtil.INSTANCE.severe("Failed to send add question payload", e);
         }
     }
-
+//vvh-12/09/24 sends payload to indicate the clients away status 
     public void sendAwayPayload(PayloadType payloadType) {
         Payload p = new Payload();
-        p.setPayloadType(payloadType);
+        p.setPayloadType(payloadType);//vvh-12/09/24 sets the payload type to away or not away 
         try {
             send(p);
-        } catch (IOException e) {
+        } catch (IOException e) {//vvh-12/09/24 handle errors
             LoggerUtil.INSTANCE.severe("Failed to send away payload", e);
         }
     }
-
+//vvh-12/09/24 checks if the current client is marked as away 
     public boolean isAway() {
         return knownClients.get(myData.getClientId()).isAway;
     }
 
-    public void sendSpectate(PayloadType type) {
+    public void sendSpectate(PayloadType type) {//vvh-12/09/24 sends payload to update the clients spectating status 
         Payload p = new Payload();
         p.setPayloadType(type);
         try {
             send(p);
-        } catch (IOException e) {
+        } catch (IOException e) {//vvh-12/09/24 handle errors 
             LoggerUtil.INSTANCE.severe("Failed to send spectate payload", e);
         }
     }
 
-    public boolean isSpectating() {
+    public boolean isSpectating() {//vvh-12/09/24 checks if the current client is spectating 
         return knownClients.get(myData.getClientId()) != null && knownClients.get(myData.getClientId()).isSpectating;
     }
 
-    public void sendCategory(String selectedCategory) {
+    public void sendCategory(String selectedCategory) {//vvh-12/09/24 sends a payload to select a specific category 
         Payload p = new Payload();
         p.setPayloadType(PayloadType.SELECT_CATEGORY);
-        p.setMessage(selectedCategory);
+        p.setMessage(selectedCategory);//vvh-12/09/24 adds the selected category to the payload message 
         try {
             send(p);
-        } catch (IOException e) {
+        } catch (IOException e) {//vvh-12/09/24 handle errors 
             LoggerUtil.INSTANCE.severe("Failed to send category payload", e);
         }
     }
 
-    public void fetchCurrentCategory() {
+    public void fetchCurrentCategory() {//vvh-12/09/24 sends a request to fetch the current category 
         Payload p = new Payload();
-        p.setPayloadType(PayloadType.FETCH_CATEGORY);
+        p.setPayloadType(PayloadType.FETCH_CATEGORY);//vvh-12/09/24
         try {
             send(p);
-        } catch (IOException e) {
+        } catch (IOException e) {//vvh-12/09/24 handle errors 
             LoggerUtil.INSTANCE.severe("Failed to send category fetch payload", e);
         }
     }

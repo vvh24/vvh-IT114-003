@@ -1,11 +1,11 @@
 package Project.Server;
 
-import java.io.Serializable;
+import java.io.Serializable;//vvh-12/09/24 Allows objects of this class to be serialized 
 import java.util.concurrent.ConcurrentHashMap;
 
-import Project.Common.AddQuestionPayload;
+import Project.Common.AddQuestionPayload;//vvh-12/09/24 Import for handling payloads to adding questions
 import Project.Common.LoggerUtil;
-import Project.Common.Payload;
+import Project.Common.Payload;//vvh-12/09/24 Import for the base payload class
 
 public class Room implements AutoCloseable {
     private String name;// unique name of the Room
@@ -230,51 +230,51 @@ public class Room implements AutoCloseable {
     protected void clientDisconnect(ServerThread sender) {
         disconnect(sender);
     }
-
+//vvh-12/09/24
     public void handleAddQuestion(ServerThread serverThread, Payload payload) {
         AddQuestionPayload addQuestionPayload = (AddQuestionPayload) payload;
-        long clientId = serverThread.getClientId();
+        long clientId = serverThread.getClientId();//vvh-12/09/24  Retrieves the client ID of the sender to identify the user adding a question
         clientsInRoom.values().forEach(client -> {
-            if (client.getClientId() == clientId) {
+            if (client.getClientId() == clientId) {//vvh-12/09/24 Ensures that the action is taken for the client who sent the payload
                 LoggerUtil.INSTANCE.info("Is question: " + addQuestionPayload.isQuestion());
                 if (!addQuestionPayload.isQuestion()) {
-                    client.sendAddQuestion(clientId);
+                    client.sendAddQuestion(clientId);//vvh-12/09/24 Sends the "add question" action to the client for further processing
                 } else {
                     client.addQuestion(clientId, payload);
                 }
             }
         });
     }
-
+//vvh-12/09/24
     public void handleSpectate(ServerThread serverThread, Payload payload) {
-        long clientId = serverThread.getClientId();
+        long clientId = serverThread.getClientId();//vvh-12/09/24 Retrieves the client ID of the sender to handle spectating actions
         clientsInRoom.values().forEach(client -> {
-            if (client.getClientId() == clientId) {
+            if (client.getClientId() == clientId) {//vvh-12/09/24 Ensures that the spectating action is only processed for the relevant client
                 client.spectate(clientId, payload);
             }
         });
     }
-
+//vvh-12/09/24
     public void handleGetCategories(ServerThread serverThread) {
-        long clientId = serverThread.getClientId();
+        long clientId = serverThread.getClientId();//vvh-12/09/24 Retrieves the client ID of the sender to send the categories
         clientsInRoom.values().forEach(client -> {
-            if (client.getClientId() == clientId) {
+            if (client.getClientId() == clientId) {//vvh-12/09/24 Ensures that the categories are sent to the correct client
                 client.sendCategories(clientId);
             }
         });
     }
-
+//vvh-12/09/24  Extracts the selected category from the payload message
     public void handleSelectCategory(ServerThread serverThread, Payload payload) {
         String selectedCategory = payload.getMessage();
-        ((GameRoom)serverThread.getCurrentRoom()).setCategory(selectedCategory);
+        ((GameRoom)serverThread.getCurrentRoom()).setCategory(selectedCategory);//vvh-12/09/24 Updates the category in the current game room
     }
-
+//vvh-12/09/24 Retrieves the current category from the game room
     public void handleFetchCategory(ServerThread serverThread, Payload payload) {
         String currentCategory = ((GameRoom)serverThread.getCurrentRoom()).getCategory();
-        long clientId = serverThread.getClientId();
+        long clientId = serverThread.getClientId();//vvh-12/09/24 Retrieves the client ID of the sender for category synchronization
         clientsInRoom.values().forEach(client -> {
             if (client.getClientId() == clientId) {
-                client.sendCategory(clientId, currentCategory);
+                client.sendCategory(clientId, currentCategory);//vvh-12/09/24 Sends the current category to the requesting client
             }
         });
     }

@@ -277,14 +277,15 @@ public class ChatPanel extends JPanel {
         chatArea.revalidate();
         chatArea.repaint();
     }
-    public void sortUserList() {
+
+    public void sortUserList() {//vvh - 12/09/24 sorts the user list 
         SwingUtilities.invokeLater(() -> userListPanel.sortUserList());
     }
-
+    //vvh - 12/09/24 Updates the away status of a user in the user list
     public void setUserAwayStatus(long clientId, boolean isAway) {
         SwingUtilities.invokeLater(() -> userListPanel.setUserAwayStatus(clientId, isAway));
     }
-
+    //vvh - 12/09/24 Updates the spectating status of a user in the user list
     public void setUserSpectateStatus(long clientId, boolean isSpectating) {
         SwingUtilities.invokeLater(() -> userListPanel.setUserSpectateStatus(clientId, isSpectating));
     }
